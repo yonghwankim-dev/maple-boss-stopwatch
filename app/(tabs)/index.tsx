@@ -1,9 +1,31 @@
 import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { Button, Card, DataTable, HelperText, TextInput } from 'react-native-paper';
+import { Button, Card, DataTable, HelperText, Menu, Provider, TextInput } from 'react-native-paper';
 
 import { View } from '@/components/Themed';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { useState } from 'react';
+
+// 보스 난이도 메타데이터
+const BOSS_DATA: Record<string, string[]> = {
+  "스우": ["Normal", "Hard", "Extreme"],
+  "데미안": ["Normal", "Hard"],
+  "가디언 엔젤 슬라임": ["Normal", "Chaos"],
+  "루시드": ["Easy", "Normal", "Hard"],
+  "윌": ["Easy", "Normal", "Hard"],
+  "더스크": ["Normal", "Chaos"],
+  "진 힐라": ["Normal", "Hard"],
+  "듄켈": ["Normal", "Hard"],
+  "검은 마법사": ["Hard", "Extreme"],
+  "선택받은 세렌": ["Normal", "Hard", "Extreme"],
+  "감시자 칼로스": ["Easy", "Normal", "Chaos", "Extreme"],
+  "최초의 대적자": ["Easy", "Normal", "Hard", "Extreme"],
+  "카링": ["Easy", "Normal", "Hard", "Extreme"],
+  "찬란한 흉성": ["Normal", "Hard"],
+  "림보": ["Normal", "Hard"],
+  "발드릭스": ["Normal", "Hard"],
+  "유피테르": ["Normal", "Hard"]
+};
+
 
 interface BossRecord{
   id: string;
@@ -19,14 +41,26 @@ export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
 
   const [characterName, setCharacterName] = useState<string>("제빛제로");
-  const [difficulty, setDifficulty] = useState<string>("Hard");
+  
+  // 보스 및 난이도 상태 관리
   const [bossName, setBossName] = useState<string>("스우");
+  const [difficulty, setDifficulty] = useState<string>(BOSS_DATA["스우"][0]);
+
+  // Menu 오픈 여부 제어 상태
+  const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
+  const [diffMenuVisible, setDiffMenuVisible] = useState<boolean>(false);
 
   const formatTime = (seconds: number) =>{
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
     const secs = (seconds % 60).toString().padStart(2, '0');
     return `${mins}분 ${secs}초`;
   }
+
+  const handleBossChange = (selectedBoss: string) => {
+    setBossName(selectedBoss);
+    setDifficulty(BOSS_DATA[selectedBoss][0]);
+    setBossMenuVisible(false);
+  };
 
   // 하단 목록 테이블 상태 관리
   const [records, setRecords] = useState<BossRecord[]>([]);
@@ -64,95 +98,133 @@ export default function StopwatchScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <TextInput
-            label="캐릭터 이름(필수)"
-            value={characterName}
-            onChangeText={setCharacterName}
-            mode="outlined"
-            error={!characterName.trim()}
-            style={styles.input}
-          />
-          {!characterName.trim() && (
-            <HelperText type="error" visible={true}>
-              캐릭터 이름을 입력해야 기록을 추가할 수 있습니다.
-            </HelperText>
-          )}
-
-          <Text style={styles.infoText}>
-            보스: <Text style={styles.bold}>{difficulty} {bossName}</Text>
-          </Text>
-        </Card.Content>
-      </Card>
-
-      {/* 타이머 디스플레이 및 제어 영역 */}
-      <Card style={styles.timeCard}>
-        <Card.Content style={styles.timeContent}>
-          
-          <Text style={styles.timerText}>{formatTime(time)}</Text>
-
-          {/* 스톱워치 버튼 영역 */}
-          <View style={styles.buttonRow}>
-            <Button
-              mode="contained"
-              onPress={isRunning ? pause : start}
-              style={styles.btn}
-              buttonColor={isRunning ? "#ff4d4d" : "#4caf50"}
-            >
-              {isRunning ? "일시정지" : "시작"}
-            </Button>
-
-            <Button
-              mode="contained"
-              onPress={handleReset}
-              style={styles.btn}
-            >
-              초기화
-            </Button>
-
-            <Button
-              mode="contained"
-              onPress={handleComplete}
-              style={styles.btn}
-              buttonColor="#2196f3"
-            >
-              완료
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* 보스 클리어 목록 테이블 */}
-      <Card style={styles.card}>
-        <Card.Title title="보스 클리어 목록" subtitle="최신 기록이 맨 위에 표시됩니다."/>
-        <Card.Content>
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title>캐릭터</DataTable.Title>
-              <DataTable.Title>보스 (난이도)</DataTable.Title>
-              <DataTable.Title numeric>클리어 시간</DataTable.Title>
-              <DataTable.Title numeric>날짜</DataTable.Title>
-            </DataTable.Header>
-
-            {records.map((item)=>(
-              <DataTable.Row key={item.id}>
-                <DataTable.Cell>{item.characterName}</DataTable.Cell>
-                <DataTable.Cell>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
-                <DataTable.Cell numeric>{item.clearTime}</DataTable.Cell>
-                <DataTable.Cell numeric>{item.createdAt}</DataTable.Cell>
-              </DataTable.Row>
-            ))}
-
-            {records.length === 0 && (
-              <Text style={styles.emptyText}>아직 추가된 보스 클리어 기록이 없습니다.</Text>
+    <Provider>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TextInput
+              label="캐릭터 이름(필수)"
+              value={characterName}
+              onChangeText={setCharacterName}
+              mode="outlined"
+              error={!characterName.trim()}
+              style={styles.input}
+            />
+            {!characterName.trim() && (
+              <HelperText type="error" visible={true}>
+                캐릭터 이름을 입력해야 기록을 추가할 수 있습니다.
+              </HelperText>
             )}
+
+            {/* 보스 및 난이도 선택 피커 버튼 레이아웃 */}
+            <View style={styles.pickerRow}>
+              {/* 보스 선택 메뉴 */}
+              <Menu
+                visible={bossMenuVisible}
+                onDismiss={()=>setBossMenuVisible(false)}
+                anchor={
+                  <Button mode="outlined" onPress={()=>setBossMenuVisible(true)} style={styles.pickerBtn}>
+                    {bossName}
+                  </Button>
+                }
+              >
+                {Object.keys(BOSS_DATA).map((boss)=>(
+                  <Menu.Item key={boss} onPress={()=> handleBossChange(boss)} title={boss}/>
+                ))}
+              </Menu>
+
+              {/* 보스 난이도 선택 메뉴 */}
+              <Menu
+                visible={diffMenuVisible}
+                onDismiss={()=>setDiffMenuVisible(false)}
+                anchor={
+                  <Button mode="outlined" onPress={()=>setDiffMenuVisible(true)} style={styles.pickerBtn}>
+                    {difficulty}
+                  </Button>
+                }
+              >
+                {BOSS_DATA[bossName].map((diff)=>(
+                  <Menu.Item key={diff} onPress={()=> {setDifficulty(diff); setDiffMenuVisible(false);}} title={diff}/>
+                ))}
+              </Menu>
+            </View>
+
+            <Text style={styles.infoText}>
+              보스: <Text style={styles.bold}>{difficulty} {bossName}</Text>
+            </Text>
+          </Card.Content>
+        </Card>
+
+        
+
+        {/* 타이머 디스플레이 및 제어 영역 */}
+        <Card style={styles.timeCard}>
+          <Card.Content style={styles.timeContent}>
             
-          </DataTable>
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            <Text style={styles.timerText}>{formatTime(time)}</Text>
+
+            {/* 스톱워치 버튼 영역 */}
+            <View style={styles.buttonRow}>
+              <Button
+                mode="contained"
+                onPress={isRunning ? pause : start}
+                style={styles.btn}
+                buttonColor={isRunning ? "#ff4d4d" : "#4caf50"}
+              >
+                {isRunning ? "일시정지" : "시작"}
+              </Button>
+
+              <Button
+                mode="contained"
+                onPress={handleReset}
+                style={styles.btn}
+              >
+                초기화
+              </Button>
+
+              <Button
+                mode="contained"
+                onPress={handleComplete}
+                style={styles.btn}
+                buttonColor="#2196f3"
+              >
+                완료
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* 보스 클리어 목록 테이블 */}
+        <Card style={styles.card}>
+          <Card.Title title="보스 클리어 목록" subtitle="최신 기록이 맨 위에 표시됩니다."/>
+          <Card.Content>
+            <DataTable>
+              <DataTable.Header>
+                <DataTable.Title>캐릭터</DataTable.Title>
+                <DataTable.Title>보스 (난이도)</DataTable.Title>
+                <DataTable.Title numeric>클리어 시간</DataTable.Title>
+                <DataTable.Title numeric>날짜</DataTable.Title>
+              </DataTable.Header>
+
+              {records.map((item)=>(
+                <DataTable.Row key={item.id}>
+                  <DataTable.Cell>{item.characterName}</DataTable.Cell>
+                  <DataTable.Cell>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
+                  <DataTable.Cell numeric>{item.clearTime}</DataTable.Cell>
+                  <DataTable.Cell numeric>{item.createdAt}</DataTable.Cell>
+                </DataTable.Row>
+              ))}
+
+              {records.length === 0 && (
+                <Text style={styles.emptyText}>아직 추가된 보스 클리어 기록이 없습니다.</Text>
+              )}
+              
+            </DataTable>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </Provider>
+    
   );
 }
 
@@ -189,6 +261,15 @@ const styles = StyleSheet.create({
   },
   input: {
     marginTop: 8
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+    backgroundColor: 'transparent'
+  },
+  pickerBtn: {
+    flex: 1
   },
   infoText: {
     fontSize: 14,
