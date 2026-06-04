@@ -1,18 +1,36 @@
-import { Platform, StyleSheet, Text } from 'react-native';
-import { Button, Card } from 'react-native-paper';
+import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { Button, Card, DataTable, HelperText, TextInput } from 'react-native-paper';
 
 import { View } from '@/components/Themed';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
+import { useState } from 'react';
 
+interface BossRecord{
+  id: string;
+  characterName: string;
+  bossName: string;
+  difficulty: string;
+  clearTime: string; // 화면 출력용(예: 15분 40초)
+  clearTimeSec: number;
+  createdAt: string; // YYYY-MM-DD 형식 (내부 데이터는 시간 포함 가능)
+}
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
 
+  const [characterName, setCharacterName] = useState<string>("제빛제로");
+  const [difficulty, setDifficulty] = useState<string>("Hard");
+  const [bossName, setBossName] = useState<string>("스우");
+
   const formatTime = (seconds: number) =>{
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
     const secs = (seconds % 60).toString().padStart(2, '0');
-    return `${mins}분:${secs}초`;
+    return `${mins}분 ${secs}초`;
   }
+
+  // 하단 목록 테이블 상태 관리
+  const [records, setRecords] = useState<BossRecord[]>([]);
+
 
   const handleReset = ()=>{
     const message = "시간을 초기화하시겠습니까?";
@@ -21,21 +39,58 @@ export default function StopwatchScreen() {
         reset();
       }
     }else{
-      reset();
+      Alert.alert("초기화", message, [
+        {text: "취소", style: "cancel"},
+        {text: "확인", onPress: reset}
+      ])
     }
   };
 
   const handleComplete = ()=>{
-    const finalTime = complete();
-    console.log("측정 완료된 시간(초):", finalTime);
-    // TODO: 다음 단계에서 캐릭터 정보와 보스 데이터를 조합해 테이블 리스트에 추가하는 로직 구현
-  }
+    const elapsedSeconds = complete();
+
+    const newRecord: BossRecord = {
+      id: Math.random().toString(36).substring(2, 9),
+      characterName: characterName.trim(),
+      bossName: bossName,
+      difficulty: difficulty,
+      clearTime: formatTime(elapsedSeconds),
+      clearTimeSec: elapsedSeconds,
+      // 출력 형식: YYYY-MM-DD
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+
+    setRecords((prevRecords)=>[newRecord, ...prevRecords]);
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <Card style={styles.card}>
+        <Card.Content>
+          <TextInput
+            label="캐릭터 이름(필수)"
+            value={characterName}
+            onChangeText={setCharacterName}
+            mode="outlined"
+            error={!characterName.trim()}
+            style={styles.input}
+          />
+          {!characterName.trim() && (
+            <HelperText type="error" visible={true}>
+              캐릭터 이름을 입력해야 기록을 추가할 수 있습니다.
+            </HelperText>
+          )}
+
+          <Text style={styles.infoText}>
+            보스: <Text style={styles.bold}>{difficulty} {bossName}</Text>
+          </Text>
+        </Card.Content>
+      </Card>
+
+      {/* 타이머 디스플레이 및 제어 영역 */}
       <Card style={styles.timeCard}>
         <Card.Content style={styles.timeContent}>
-          {/* 타이머 디스플레이 영역 */}
+          
           <Text style={styles.timerText}>{formatTime(time)}</Text>
 
           {/* 스톱워치 버튼 영역 */}
@@ -68,7 +123,36 @@ export default function StopwatchScreen() {
           </View>
         </Card.Content>
       </Card>
-    </View>
+
+      {/* 보스 클리어 목록 테이블 */}
+      <Card style={styles.card}>
+        <Card.Title title="보스 클리어 목록" subtitle="최신 기록이 맨 위에 표시됩니다."/>
+        <Card.Content>
+          <DataTable>
+            <DataTable.Header>
+              <DataTable.Title>캐릭터</DataTable.Title>
+              <DataTable.Title>보스 (난이도)</DataTable.Title>
+              <DataTable.Title numeric>클리어 시간</DataTable.Title>
+              <DataTable.Title numeric>날짜</DataTable.Title>
+            </DataTable.Header>
+
+            {records.map((item)=>(
+              <DataTable.Row key={item.id}>
+                <DataTable.Cell>{item.characterName}</DataTable.Cell>
+                <DataTable.Cell>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
+                <DataTable.Cell numeric>{item.clearTime}</DataTable.Cell>
+                <DataTable.Cell numeric>{item.createdAt}</DataTable.Cell>
+              </DataTable.Row>
+            ))}
+
+            {records.length === 0 && (
+              <Text style={styles.emptyText}>아직 추가된 보스 클리어 기록이 없습니다.</Text>
+            )}
+            
+          </DataTable>
+        </Card.Content>
+      </Card>
+    </ScrollView>
   );
 }
 
@@ -76,8 +160,16 @@ const styles = StyleSheet.create({
   container: { 
     flex:1, 
     backgroundColor: '#f5f5f5',
-    justifyContent: 'center', 
-    padding: 16
+  },
+  contentContainer: {
+    padding: 16,
+    maxWidth: 800,
+    width: '100%',
+    alignSelf: 'center'
+  },
+  card: {
+    marginBottom: 16,
+    backgroundColor: "#fff"
   },
   timeCard: {
     backgroundColor: "#1e1e24",
@@ -89,11 +181,23 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   timerText: { 
-    fontSize: 56, 
+    fontSize: 52, 
     fontWeight: 'bold', 
     color: '#fff',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    marginBottom: 32
+    marginBottom: 20
+  },
+  input: {
+    marginTop: 8
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 12
+  },
+  bold: {
+    fontWeight: 'bold',
+    color: '#2196f3'
   },
   buttonRow: { 
     flexDirection: 'row',
@@ -103,5 +207,11 @@ const styles = StyleSheet.create({
   },
   btn: {
     flex: 1
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#999',
+    marginVertical: 30,
+    fontSize: 14
   }
 });
