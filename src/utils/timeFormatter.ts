@@ -10,3 +10,11 @@ export const formatTime = (seconds: number) =>{
     const secs = (seconds % 60).toString().padStart(2, '0');
     return `${mins}분 ${secs}초`;
 }
+
+/**
+ * 현재 일자 반환
+ * @returns YYYY-MM-DD 형식의 문자열
+ */
+export const getTodayDate = (): string => {
+    return new Date().toISOString().split('T')[0];
+}

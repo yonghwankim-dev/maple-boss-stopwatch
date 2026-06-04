@@ -5,7 +5,7 @@ import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
-import { formatTime } from '@/src/utils/timeFormatter';
+import { formatTime, getTodayDate } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
 
 export default function StopwatchScreen() {
@@ -56,7 +56,7 @@ export default function StopwatchScreen() {
       clearTime: formatTime(elapsedSeconds),
       clearTimeSec: elapsedSeconds,
       // 출력 형식: YYYY-MM-DD
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: getTodayDate()
     };
 
     setRecords((prevRecords)=>[newRecord, ...prevRecords]);
