@@ -16,6 +16,7 @@ export const useStopwatch = ()=>{
         }, 1000);
     };
 
+    // 일시정지 기능
     const pause = ()=>{
         if(!isRunning){
             return;
@@ -26,7 +27,23 @@ export const useStopwatch = ()=>{
             clearInterval(timeRef.current);
             timeRef.current = null;
         }
-    }
+    };
 
-    return {time, isRunning, start, pause};
+    // 초기화 기능
+    const reset = ()=>{
+        setIsRunning(false);
+        if(timeRef.current){
+            clearInterval(timeRef.current);
+            timeRef.current = null;
+        }
+        setTime(0);
+    };
+
+    // 완료 기능
+    const complete = ()=>{
+        reset();
+        return time;
+    };
+
+    return {time, isRunning, start, pause, reset, complete};
 };
