@@ -88,7 +88,12 @@ export default function StopwatchScreen() {
                 visible={bossMenuVisible}
                 onDismiss={()=>setBossMenuVisible(false)}
                 anchor={
-                  <Button mode="outlined" onPress={()=>setBossMenuVisible(true)} style={styles.pickerBtn}>
+                  <Button 
+                    mode="outlined" 
+                    onPress={()=>setBossMenuVisible(true)} 
+                    style={styles.pickerBtn}
+                    contentStyle={styles.pickerBtnContent}
+                  >
                     {bossName}
                   </Button>
                 }
@@ -103,7 +108,12 @@ export default function StopwatchScreen() {
                 visible={diffMenuVisible}
                 onDismiss={()=>setDiffMenuVisible(false)}
                 anchor={
-                  <Button mode="outlined" onPress={()=>setDiffMenuVisible(true)} style={styles.pickerBtn}>
+                  <Button 
+                    mode="outlined" 
+                    onPress={()=>setDiffMenuVisible(true)} 
+                    style={styles.pickerBtn}
+                    contentStyle={styles.pickerBtnContent}
+                  >
                     {difficulty}
                   </Button>
                 }
@@ -234,7 +244,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   pickerBtn: {
-    flex: 1
+    flex: 1,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc'
+  },
+  pickerBtnContent: {
+    height: 48,
+    justifyContent: 'center'
   },
   infoText: {
     fontSize: 14,
