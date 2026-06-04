@@ -2,19 +2,10 @@ import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { Button, Card, DataTable, HelperText, Menu, Provider, TextInput } from 'react-native-paper';
 
 import { View } from '@/components/Themed';
+import { BOSS_DATA } from '@/constants/bossData';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
+import { BossRecord } from '@/src/types/boss';
 import { useState } from 'react';
-import { BOSS_DATA } from '../../constants/bossData';
-
-interface BossRecord{
-  id: string;
-  characterName: string;
-  bossName: string;
-  difficulty: string;
-  clearTime: string; // 화면 출력용(예: 15분 40초)
-  clearTimeSec: number;
-  createdAt: string; // YYYY-MM-DD 형식 (내부 데이터는 시간 포함 가능)
-}
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
