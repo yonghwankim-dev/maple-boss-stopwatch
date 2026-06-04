@@ -5,6 +5,7 @@ import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
+import { formatTime } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
 
 export default function StopwatchScreen() {
@@ -19,12 +20,6 @@ export default function StopwatchScreen() {
   // Menu 오픈 여부 제어 상태
   const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
   const [diffMenuVisible, setDiffMenuVisible] = useState<boolean>(false);
-
-  const formatTime = (seconds: number) =>{
-    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const secs = (seconds % 60).toString().padStart(2, '0');
-    return `${mins}분 ${secs}초`;
-  }
 
   const handleBossChange = (selectedBoss: string) => {
     setBossName(selectedBoss);
