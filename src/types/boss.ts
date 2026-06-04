@@ -7,3 +7,8 @@ export interface BossRecord{
   clearTimeSec: number;
   createdAt: string; // YYYY-MM-DD 형식 (내부 데이터는 시간 포함 가능)
 }
+
+export interface Character{
+    id: string,
+    name: string
+}
