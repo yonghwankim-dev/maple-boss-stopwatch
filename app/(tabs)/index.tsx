@@ -1,25 +1,19 @@
 import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { Button, Card, DataTable, Divider, Menu, Provider, TextInput } from 'react-native-paper';
+import { Button, Card, DataTable, Menu, Provider } from 'react-native-paper';
 
 import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
+import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
-import { BossRecord, Character } from '@/src/types/boss';
+import { BossRecord } from '@/src/types/boss';
 import { formatTime, getTodayDate } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  
-  // 캐릭터 다중 관리 상태 정의
-  const [characters, setCharacters] = useState<Character[]>([
-    {id: '1', name: '제빛제로'},
-    {id: '2', name: '제빛보마'}
-  ]);
-  
-  const [selectedCharacter, setSelectedCharacter] = useState<Character>(characters[0]);
-  const [newChracterName, setNewChracterName] = useState<string>('');
-  
+
+  const { characters, selectedCharacter, setSelectedCharacter, records, setRecords } = useCharacter();
+    
   // 보스 및 난이도 상태 관리
   const [bossName, setBossName] = useState<string>("스우");
   const [difficulty, setDifficulty] = useState<string>(BOSS_DATA["스우"][0]);
@@ -36,74 +30,6 @@ export default function StopwatchScreen() {
     setBossMenuVisible(false);
   };
 
-  // 신규 캐릭처 추가 핸들러
-  const handleAddChracter = ()=>{
-    const trimmedChracterName = newChracterName.trim();
-    if(!trimmedChracterName){
-      const errorMessage = "캐릭터 이름을 입력해주세요";
-      if(Platform.OS === 'web'){
-        alert(errorMessage);
-      }else{
-        Alert.alert("경고", errorMessage);
-        return;
-      }
-    }
-    
-    // 중복 검사
-    if(characters.some(char => char.name === trimmedChracterName)){
-      const errorMessage = "이미 등록된 캐릭터 이름입니다.";
-      if(Platform.OS === 'web'){
-        alert(errorMessage);
-      }else{
-        Alert.alert("경고", errorMessage);
-        return;
-      }
-    }
-
-    const newChar: Character = {
-      id: Math.random().toString(36).substring(2,9),
-      name: trimmedChracterName
-    };
-
-    setCharacters(prev => [...prev, newChar]);
-    setSelectedCharacter(newChar); // 캐릭터 추가 후 자동 선택
-    setNewChracterName('');
-  }
-
-  // 선택된 캐릭터 삭제 핸들러
-  const handleDeleteChracter = (deleteChracter: Character)=>{
-    const confirmMessage = `'${deleteChracter.name}' 캐릭터를 삭제하겠습니까? 삭제 시 해당 캐릭터의 보스 클리어 기록도 함께 삭제됩니다.`;
-    
-    const executeDelete = ()=>{
-      // 캐릭터 삭제
-      const filteredChracters = characters.filter(char => char.id !== deleteChracter.id);
-      setCharacters(filteredChracters);
-
-      // 연관된 보스 클리어 기록도 연계 삭제
-      setRecords(prev => prev.filter(record => record.characterName !== deleteChracter.name))
-
-      // 선택되었던 캐릭터가 삭제된 경우 첫번째 캐릭터로 복구
-      if(selectedCharacter.id === deleteChracter.id){
-        setSelectedCharacter(filteredChracters[0] || {id: '', name: '선택 없음'});
-      }
-    };
-
-    if(Platform.OS === 'web'){
-      if(window.confirm(confirmMessage)){
-        executeDelete();
-      }
-    }else{
-      Alert.alert("캐릭터 삭제", confirmMessage, [
-        { text: "취소", style: "cancel" },
-        { text: "확인", style: "destructive", onPress: executeDelete}
-      ]);
-    }
-  }
-
-  // 하단 목록 테이블 상태 관리
-  const [records, setRecords] = useState<BossRecord[]>([]);
-
-
   const handleReset = ()=>{
     const message = "시간을 초기화하시겠습니까?";
     if(Platform.OS === 'web'){
@@ -119,6 +45,15 @@ export default function StopwatchScreen() {
   };
 
   const handleComplete = ()=>{
+    if(!selectedCharacter){
+      const errorMessage = "캐릭터 관리 탭에서 캐릭터를 먼저 추가해 주세요.";
+      if(Platform.OS === 'web'){
+        alert(errorMessage);
+      }else{
+        Alert.alert("선택 오류", errorMessage);
+      }
+      return;
+    }
     const elapsedSeconds = complete();
 
     const newRecord: BossRecord = {
@@ -142,22 +77,6 @@ export default function StopwatchScreen() {
         <Card style={styles.card}>
           <Card.Title title="캐릭터 관리 및 선택" subtitle="스톱워치를 시작할 캐릭터를 선택해주세요"/>
           <Card.Content>
-            {/* 캐릭터 신규 등록 입력창 */}
-            <View style={styles.addCharRow}>
-              <TextInput
-                label="새 캐릭터 이름"
-                value={newChracterName}
-                onChangeText={setNewChracterName}
-                mode="outlined"
-                style={styles.charInput}
-              />
-              <Button mode='contained' onPress={handleAddChracter} style={styles.rectBtn}>
-                등록
-              </Button>
-            </View>
-
-            <Divider style={styles.divider}/>
-
             {/* 메인 선택 구역 (캐릭터 / 보스 / 난이도) */}
             <View style={styles.pickerRow}>
               {/* 캐릭터 선택 메뉴 */}
@@ -171,7 +90,7 @@ export default function StopwatchScreen() {
                     style={styles.pickerBtn}
                     contentStyle={styles.pickerBtnContent}
                   >
-                    캐릭터: {selectedCharacter.name}
+                    캐릭터: {selectedCharacter?.name ? selectedCharacter?.name : '없음'}
                   </Button>
                 } 
               >
@@ -183,17 +102,6 @@ export default function StopwatchScreen() {
                   />
                 ))}
               </Menu>
-              {/* 현재 선택된 캐릭터를 삭제 버튼 */}
-              <Button
-                mode="outlined"
-                onPress={()=>handleDeleteChracter(selectedCharacter)}
-                style={styles.deleteBtn}
-                contentStyle={styles.pickerBtnContent}
-                textColor='#ff4d4d'
-                disabled={characters.length <= 1}
-              >
-                삭제
-              </Button>
 
               {/* 보스 선택 메뉴 */}
               <Menu
@@ -237,7 +145,9 @@ export default function StopwatchScreen() {
             </View>
 
             <Text style={styles.infoText}>
-              보스: <Text style={styles.bold}>{difficulty} {bossName}</Text>
+              타겟: <Text style={styles.boldChar}>
+                {selectedCharacter ? selectedCharacter.name : '미선택'}
+                </Text> ➡️ <Text style={styles.boldBoss}>{difficulty} {bossName}</Text>
             </Text>
           </Card.Content>
         </Card>
@@ -395,6 +305,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
     marginTop: 12
+  },
+  boldChar: {
+    fontWeight: 'bold',
+    color: '#e91e63'
+  },
+  boldBoss: {
+    fontWeight: 'bold',
+    color: '#2196f3'
   },
   bold: {
     fontWeight: 'bold',
