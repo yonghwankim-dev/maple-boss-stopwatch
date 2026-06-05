@@ -17,8 +17,7 @@ const CharacterContext = createContext<CharacterContextType | undefined>(undefin
 
 export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([
-        {id: '1', name: '제빛제로'},
-        {id: '2', name: '제빛보마'}
+        {id: '1', name: '캐릭터1'}
     ]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [records, setRecords] = useState<BossRecord[]>([]);
@@ -96,6 +95,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         if(selectedCharacter?.id === id){
             setSelectedCharacter({id, name: trimmedName});
         }
+        
         return {
             success: true
         }
