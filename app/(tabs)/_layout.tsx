@@ -25,6 +25,16 @@ export default function TabLayout() {
           )
         }}
       />
+      {/* 대시보드 통계 탭 추가 */}
+      <Tabs.Screen
+        name="stats"
+        options={{
+          title: '통계 리포트',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'bar-chart' : 'bar-chart-outline'} color={color} />
+          )
+        }}
+      />
       {/* 캐릭터 관리 탭 설정 */}
       <Tabs.Screen
         name="manage"
