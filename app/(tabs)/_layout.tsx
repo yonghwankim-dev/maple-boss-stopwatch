@@ -2,11 +2,8 @@ import { Tabs } from 'expo-router';
 
 import TabBarIcon from '@/components/navigation/TabarIcon';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import { useColorScheme } from '@/components/useColorScheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
