@@ -1,8 +1,9 @@
 import { useCharacter } from "@/src/context/CharacterContext";
-import { useMemo, useState } from "react";
+import { formatTime } from "@/src/utils/timeFormatter";
+import React, { useMemo, useState } from "react";
 import { Dimensions, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
-import { Card, IconButton, Surface, Text } from "react-native-paper";
+import { Card, Divider, IconButton, List, Surface, Text } from "react-native-paper";
 
 if(Platform.OS === 'web' && typeof window !== 'undefined'){
     const iconsole = window.console;
@@ -34,6 +35,24 @@ export default function StatsScreen(){
         .slice(-5); // 최근 5개만
     }, [records, selectedCharName]);
 
+    // 데이터 가공2: 보스별 개인 최고 기록(최단 타임) 계산
+    const bestRecords = useMemo(()=>{
+        const filtered = records.filter(r => r.characterName === selectedCharName);
+        const bossMap: {[key: string]: number} = {};
+
+        filtered.forEach(r=>{
+            if(!bossMap[r.bossName] || r.clearTimeSec < bossMap[r.bossName]){
+                bossMap[r.bossName] = r.clearTimeSec;
+            }
+        });
+
+        return Object.entries(bossMap).map(([bossName, clearTimeSec]) => ({
+            bossName,
+            clearTimeSec
+        }));
+    }, [records, selectedCharName]);
+
+
     // 차트 데이터 형식 설정
     const chartData = useMemo(()=>{
         if(chartRecords.length === 0){
@@ -46,7 +65,7 @@ export default function StatsScreen(){
                     // 차트는 분(Minute) 단위 실수 형태로 변환하여 시각화
                     data: chartRecords.map(r=>r.clearTimeSec / 60),
                     color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`, // 메인 블루
-                    strokeweight: 3
+                    strokeWidth: 3
                 },
             ],
         };
@@ -98,7 +117,7 @@ export default function StatsScreen(){
                                 color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
                                 labelColor: (opacity = 1) => `rgba(100, 100, 100, ${opacity})`,
                                 style: {borderRadius: 8},
-                                // propsForDots: {r: '5', strokeWidth: '2', stroke: '#2196f3'},
+                                propsForDots: {r: '5', strokeWidth: '2', stroke: '#2196f3'},
                             }}
                             bezier // 곡선효과 적용
                             style={styles.chartRadius}
@@ -106,9 +125,33 @@ export default function StatsScreen(){
                         />
                     ) : (
                         <View style={styles.emptyContainer}>
-                            <IconButton icon="chart-timeline-varient" size={40} iconColor="#ccc"/>
+                            <IconButton icon="chart-timeline-variant" size={40} iconColor="#ccc"/>
                             <Text style={styles.emptyText}>아직 이 캐릭터로 저장된 보스 클리어 기록이 없습니다.</Text>
                         </View>
+                    )}
+                </Card.Content>
+            </Card>
+
+            {/* 보스별 최고 기록 요약 보드 */}
+            <Card style={styles.card}>
+                <Card.Title title="보스별 최고 기록" subtitle="가장 빠르게 클리어한 시간입니다."/>
+                <Card.Content>
+                    {bestRecords.length > 0 ? (
+                        bestRecords.map((item, index) => (
+                            <React.Fragment key={item.bossName}>
+                                <View style={styles.bestRow}>
+                                    <List.Item
+                                        title={item.bossName}
+                                        titleStyle={styles.bossTitle}
+                                        style={styles.listItem}
+                                    />
+                                    <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
+                                </View>
+                                {index < bestRecords.length - 1 && <Divider/>}
+                            </React.Fragment>
+                        ))
+                    ) : (
+                        <Text style={styles.emptyText}>기록이 존재하지 않습니다.</Text>                
                     )}
                 </Card.Content>
             </Card>
@@ -169,6 +212,27 @@ const styles = StyleSheet.create({
   chartRadius: {
     borderRadius: 8,
     marginTop: 8
+  },
+  // 최고 기록 열 레이아웃
+  bestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'transaprent'
+  },
+  listItem: {
+    flex: 1,
+    paddingVertical: 4
+  },
+  bossTitle: {
+    fontSize: 15,
+    fontWeight: 'bold'
+  },
+  bestTime: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#4caf50',
+    marginRight: 16
   },
 
   emptyContainer: {
