@@ -88,13 +88,12 @@ export default function ManageCharactersScreen(){
                                     <List.Item
                                         title={char.name}
                                         titleStyle={styles.charTitle}
-                                        left={props => <List.Icon {...props} icon="account-shield-outline" color="#2196f3"/>}
                                         style={styles.listItem}
                                     />
                                     {/* 단일 캐릭터일때 삭제를 방지하는 최소 안전장치 */}
                                     {characters.length > 1 && (
                                         <IconButton
-                                            icon="delete-outline"
+                                            icon="delete"
                                             iconColor="#ff4d4d"
                                             size={24}
                                             onPress={()=>handleDeletePrompt(char.id, char.name)}
