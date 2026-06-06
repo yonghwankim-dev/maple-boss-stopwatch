@@ -1,5 +1,5 @@
 import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { Button, Card, DataTable, Menu, Provider } from 'react-native-paper';
+import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
 
 import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
@@ -11,7 +11,6 @@ import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-
   const { characters, selectedCharacter, setSelectedCharacter, records, setRecords } = useCharacter();
     
   // 보스 및 난이도 상태 관리
@@ -23,6 +22,14 @@ export default function StopwatchScreen() {
   const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
   const [diffMenuVisible, setDiffMenuVisible] = useState<boolean>(false);
 
+  // 기록 방식 상태 관리 ('timer': 스톱워치, 'manual': 직접입력)
+  const [recordMode, setRecordMode] = useState<'timer' | 'manual'>('timer');
+
+  // 직접 입력 폼 전용 상태 관리
+  const [manualMinutes, setManualMinutes] = useState<string>('');
+  const [manualSeconds, setManualSeconds] = useState<string>('');
+  const [manualDate, setManualDate] = useState<string>(getTodayDate());
+  
   // 보스 변경 핸들러
   const handleBossChange = (selectedBoss: string) => {
     setBossName(selectedBoss);
@@ -69,6 +76,79 @@ export default function StopwatchScreen() {
 
     setRecords((prevRecords)=>[newRecord, ...prevRecords]);
   };
+
+  // 수동 기록 저장 핸들러
+  const handleManualSave = () => {
+    if(!selectedCharacter){
+      const errorMessage = "캐릭터 관리 탭에서 캐릭터를 먼저 추가해주세요.";
+      if(Platform.OS === 'web'){
+        alert(errorMessage);
+      }else{
+        Alert.alert("선택 오류", errorMessage);
+      }
+      return;
+    }
+
+    const mins = parseInt(manualMinutes || '0', 10);
+    const secs = parseInt(manualSeconds || '0', 10);
+
+    if(mins == 0 && secs == 0){
+      const message = "클리어 시간을 입력해주세요.";
+      if(Platform.OS === 'web'){
+        alert(message);
+      }else{
+        Alert.alert("입력 오류", message);
+      }
+      return;
+    }
+    
+    if(secs >= 60){
+      const message = "초는 59초 이하로 입력해주세요.";
+      if(Platform.OS === 'web'){
+        alert(message);
+      }else{
+        Alert.alert("입력 오류", message);
+      }
+      return;
+    }
+
+    // YYYY-MM-DD 정규식 검증
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if(!dateRegex.test(manualDate)){
+      const message = "날짜 형식을 YYYY-MM-DD에 맞게 입력해주세요.";
+      if(Platform.OS === 'web'){
+        alert(message);
+      }else{
+        Alert.alert("입력 오류", message);
+      }
+      return;
+    }
+
+    const totalSeconds = mins * 60 + secs;
+    const newRecord: BossRecord = {
+      id: Math.random().toString(36).substring(2, 9),
+      characterName: selectedCharacter.name,
+      bossName: bossName,
+      difficulty: difficulty,
+      clearTime: formatTime(totalSeconds),
+      clearTimeSec: totalSeconds,
+      createdAt: manualDate
+    };
+
+    setRecords((prevRecords)=>[newRecord, ...prevRecords ]);
+
+    // 저장후 폼 초기화
+    setManualMinutes('');
+    setManualSeconds('');
+  };
+
+  // 보스 클리어 기록 삭제 핸들러
+  const handleDeleteRecord = (id: string)=>{
+    const performDelete = ()=>{
+      setRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
+    }
+    performDelete();
+  }
 
   return (
     <Provider>
@@ -152,44 +232,118 @@ export default function StopwatchScreen() {
           </Card.Content>
         </Card>
 
+        {/* 기록 모드 전환 탭 */}
+        <View style={styles.tabWrapper}>
+          <SegmentedButtons
+            value={recordMode}
+            onValueChange={setRecordMode}
+            buttons={[
+              {
+                value: 'timer',
+                label: '스톱워치 측정',
+                icon: 'timer-outline'
+              },
+              {
+                value: 'manual',
+                label: '직접 기록 입력',
+                icon: 'pencil-outline'
+              }
+            ]}
+            style={styles.segmentedTab}
+          />
+        </View>
+
+        {/* 하단 제어 섹션 분기점 */}
+        {recordMode === 'timer' ? (
+          /* 타이머 디스플레이 및 제어 영역 */
+          <Card style={styles.timeCard}>
+            <Card.Content style={styles.timeContent}>    
+              <Text style={styles.timerText}>{formatTime(time)}</Text>
+
+              {/* 스톱워치 버튼 영역 */}
+              <View style={styles.buttonRow}>
+                <Button
+                  mode="contained"
+                  onPress={isRunning ? pause : start}
+                  style={styles.fullBtn}
+                  labelStyle={styles.btnLabel}
+                  icon={isRunning ? "pause" : "play"}
+                  buttonColor={isRunning ? "#ff4d4d" : "#4caf50"}
+                >
+                  {isRunning ? "일시정지" : "시작"}
+                </Button>
+
+                <Button
+                  mode="contained"
+                  onPress={handleReset}
+                  style={[styles.fullBtn, styles.resetBtn]}
+                  labelStyle={styles.btnLabel}
+                  icon="refresh"
+                >
+                  초기화
+                </Button>
+
+                <Button
+                  mode="contained"
+                  onPress={handleComplete}
+                  style={styles.fullBtn}
+                  labelStyle={styles.btnLabel}
+                  icon="check-bold"
+                  disabled={!isRunning}
+                  buttonColor={isRunning ? '#2196f3' : '#b0bec5'}
+                >
+                  완료
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+
+        ) : (
+          /* 수동 기록 입력 영역 */
+          <Card style={styles.card}>
+            <Card.Title title="직접 기록 입력" subtitle="클리어 시간과 날짜를 수동으로 입력합니다."/>
+            <Card.Content style={{gap: 16}}>
+              <View style={styles.inputRow}>
+                <TextInput
+                  label="분"
+                  value={manualMinutes}
+                  onChangeText={setManualMinutes}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={{flex: 1}}
+                  placeholder='00'
+                />
+                <Text style={styles.timeSeparator}>:</Text>
+                <TextInput
+                  label="초"
+                  value={manualSeconds}
+                  onChangeText={setManualSeconds}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={{flex: 1}}
+                  placeholder='00'
+                />
+              </View>
+              <TextInput
+                label="클리어 날짜 (YYYY-MM-DD)"
+                value={manualDate}
+                onChangeText={setManualDate}
+                mode='outlined'
+                placeholder='1900-01-01'
+              />
+              <Divider style={{marginVertical: 4}}/>
+              <Button
+                mode='contained'
+                onPress={handleManualSave}
+                buttonColor='#4caf50'
+                icon='content-save'
+              >
+                저장
+              </Button>
+            </Card.Content>
+          </Card> 
+        )}
         
-
-        {/* 타이머 디스플레이 및 제어 영역 */}
-        <Card style={styles.timeCard}>
-          <Card.Content style={styles.timeContent}>
-            
-            <Text style={styles.timerText}>{formatTime(time)}</Text>
-
-            {/* 스톱워치 버튼 영역 */}
-            <View style={styles.buttonRow}>
-              <Button
-                mode="contained"
-                onPress={isRunning ? pause : start}
-                style={styles.btn}
-                buttonColor={isRunning ? "#ff4d4d" : "#4caf50"}
-              >
-                {isRunning ? "일시정지" : "시작"}
-              </Button>
-
-              <Button
-                mode="contained"
-                onPress={handleReset}
-                style={styles.btn}
-              >
-                초기화
-              </Button>
-
-              <Button
-                mode="contained"
-                onPress={handleComplete}
-                style={styles.btn}
-                buttonColor="#2196f3"
-              >
-                완료
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
 
         {/* 보스 클리어 목록 테이블 */}
         <Card style={styles.card}>
@@ -197,18 +351,28 @@ export default function StopwatchScreen() {
           <Card.Content>
             <DataTable>
               <DataTable.Header>
-                <DataTable.Title>캐릭터</DataTable.Title>
-                <DataTable.Title>보스 (난이도)</DataTable.Title>
-                <DataTable.Title numeric>클리어 시간</DataTable.Title>
-                <DataTable.Title numeric>날짜</DataTable.Title>
+                <DataTable.Title style={{flex: 1.2}}>캐릭터</DataTable.Title>
+                <DataTable.Title style={{flex: 2}}>보스 (난이도)</DataTable.Title>
+                <DataTable.Title numeric style={{flex: 1.2}}>클리어 시간</DataTable.Title>
+                <DataTable.Title numeric style={{flex: 1.5}}>날짜</DataTable.Title>
+                <DataTable.Title numeric style={styles.deleteHeader}>관리</DataTable.Title>
               </DataTable.Header>
 
               {records.map((item)=>(
                 <DataTable.Row key={item.id}>
-                  <DataTable.Cell>{item.characterName}</DataTable.Cell>
-                  <DataTable.Cell>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
-                  <DataTable.Cell numeric>{item.clearTime}</DataTable.Cell>
-                  <DataTable.Cell numeric>{item.createdAt}</DataTable.Cell>
+                  <DataTable.Cell style={{flex: 1.2}}>{item.characterName}</DataTable.Cell>
+                  <DataTable.Cell style={{flex: 2}}>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
+                  <DataTable.Cell numeric style={{flex: 1.2}}>{item.clearTime}</DataTable.Cell>
+                  <DataTable.Cell numeric style={{flex: 1.5}}>{item.createdAt}</DataTable.Cell>
+                  <DataTable.Cell numeric style={styles.deleteCell}>
+                    <IconButton
+                      icon="delete-outline"
+                      iconColor="#ff4d4d"
+                      size={20}
+                      onPress={()=> handleDeleteRecord(item.id)}
+                      style={styles.deleteIconBtn}
+                    />
+                  </DataTable.Cell>
                 </DataTable.Row>
               ))}
 
@@ -240,6 +404,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: "#fff"
   },
+  tabWrapper:{
+    marginBottom: 16,
+    backgroundColor: 'transparent'
+  },
+  segmentedTab:{
+    backgroundColor: '#fff',
+    borderRadius: 8
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  timeSeparator:{
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#666'
+  },
 
   // 캐릭터 추가 폼 레이아웃
   addCharRow:{
@@ -262,19 +444,20 @@ const styles = StyleSheet.create({
 
   timeCard: {
     backgroundColor: "#1e1e24",
-    paddingVertical: 30,
     borderRadius: 12,
-    elevation: 4
+    elevation: 4,
+    marginBottom: 16,
+    overflow: 'hidden'  
   },
   timeContent:{
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingVertical: 40
   },
   timerText: { 
     fontSize: 52, 
     fontWeight: 'bold', 
     color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    marginBottom: 20
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace'
   },
   input: {
     marginTop: 8
@@ -320,17 +503,43 @@ const styles = StyleSheet.create({
   },
   buttonRow: { 
     flexDirection: 'row',
-    justifyContent: 'space-between',
     width: '100%',
-    gap: 8
+    backgroundColor: 'transparent'
   },
-  btn: {
-    flex: 1
+  fullBtn: {
+    flex: 1,
+    borderRadius: 0,
+    height: 52,
+    justifyContent: 'center'
+  },
+  resetBtn: {
+    backgroundColor: '#424242'
+  },
+  btnLabel: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginVertical: 0
   },
   emptyText: {
     textAlign: 'center',
     color: '#999',
     marginVertical: 30,
     fontSize: 14
+  },
+
+  // 보스 클리어 목록 - 관리 컬럼 스타일
+  deleteHeader: {
+    flex: 0.8,
+    justifyContent: 'center',
+    paddingRight: 0
+  },
+  deleteCell: {
+    flex: 0.8,
+    justifyContent: 'center',
+    paddingRight: 0
+  },
+  deleteIconBtn: {
+    margin: 0,
+    padding: 0
   }
 });

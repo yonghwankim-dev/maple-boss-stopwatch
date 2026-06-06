@@ -119,8 +119,8 @@ export default function StatsScreen(){
         const minutesData = filteredRecords.map(r=>r.clearTimeSec / 60);
         const maxMinutes = Math.max(...minutesData, 5);
 
-        const yAxisMax = Math.ceil(maxMinutes / 5) * 5;
-        const segments = yAxisMax / 5;
+        const yAxisMax = 30;
+        const segments = 6;
         
         return {
             data: {
@@ -130,6 +130,11 @@ export default function StatsScreen(){
                         data: minutesData,
                         color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
                         strokeWidth: 3
+                    },
+                    {
+                        data: [yAxisMax],
+                        withDots: false, // 점 숨기기
+                        color: () => `rgba(0, 0, 0, 0)`, // 선 숨기기
                     }
                 ],
             },
@@ -245,7 +250,6 @@ export default function StatsScreen(){
                             fromZero={true}
                             yAxisLabel=""
                             yAxisSuffix="분" 
-                            ymax={chartConfigValues.yAxisMax}
                             segments={chartConfigValues.segments}
                             chartConfig={{
                                 backgroundColor: '#ffffff',
