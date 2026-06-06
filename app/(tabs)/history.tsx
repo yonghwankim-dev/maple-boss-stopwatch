@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, tempRecords, setTempRecords} = useCharacter();
+    const {characters, persistentRecords, deleteFromPersistent} = useCharacter();
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
@@ -12,14 +12,13 @@ export default function CharacterHistoryScreen(){
         if(!selectedCharName){
             return [];
         }
-        return tempRecords
+        return persistentRecords
             .filter((record)=>record.characterName === selectedCharName)
             .sort((a,b)=>new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [tempRecords, selectedCharName]);
+    }, [persistentRecords, selectedCharName]);
 
-    const handleDeleteRecord = (id: string)=>{
-        const performDelete = () => setTempRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
-        performDelete();
+    const handleDeleteRecord = async (id: string)=>{
+        await deleteFromPersistent(id);
     };
 
     return (
