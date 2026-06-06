@@ -15,8 +15,8 @@ export default function ManageCharactersScreen(){
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState<string>('');
 
-    const handleAdd = ()=>{
-        const result = addCharacter(newCharacterName);
+    const handleAdd = async ()=>{
+        const result = await addCharacter(newCharacterName);
         if(result.success){
             const message = "캐릭터 등록에 성공하였습니다."
             if(Platform.OS === 'web'){
@@ -42,8 +42,8 @@ export default function ManageCharactersScreen(){
     };
 
     // 편집 저장 핸들러
-    const handleUpdate = (id: string, oldName: string)=>{
-        const result = updateChracter(id, oldName, editingName); 
+    const handleUpdate = async (id: string, oldName: string)=>{
+        const result = await updateChracter(id, oldName, editingName); 
         if(!result.success){
             if(Platform.OS === 'web'){
                 alert(result.error);
@@ -55,12 +55,12 @@ export default function ManageCharactersScreen(){
         setEditingId(null); // 편집 모드 종료
     }
 
-    const handleDeletePrompt = (id: string, name: string)=>{
+    const handleDeletePrompt = async (id: string, name: string)=>{
         const message = `'${name} 캐릭터를 삭제하시겠습니까?\n삭제 시 해당 캐릭터의 모든 보스 클리어 기록도 함께 영구 삭제됩니다.'`;
         
         if(Platform.OS === 'web'){
             if(window.confirm(message)){
-                deleteCharacter(id, name);
+                await deleteCharacter(id, name);
             }
         }else{
             Alert.alert("캐릭터 삭제", message, [
@@ -68,7 +68,7 @@ export default function ManageCharactersScreen(){
                 {
                     text: "확인",
                     style: "destructive",
-                    onPress: ()=>deleteCharacter(id, name)
+                    onPress: async ()=> await deleteCharacter(id, name)
                 }
             ]);
         }
