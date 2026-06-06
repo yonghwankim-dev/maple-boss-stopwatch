@@ -1,6 +1,7 @@
+import { BOSS_DATA } from "@/constants/bossData";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
 import { Card, Divider, IconButton, List, Surface, Text } from "react-native-paper";
@@ -23,53 +24,101 @@ if(Platform.OS === 'web' && typeof window !== 'undefined'){
     }
 }
 
+// X축 날짜 형식 헬퍼 함수
+const formatXAxisLabel = (dateString: string)=>{
+    const date = new Date(dateString);
+    const currentYear = new Date().getFullYear();
+    const recordYear = date.getFullYear();
+
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    // 이전 연도 데이터 포함시 YYYY-MM-DD, 올해 데이터는 MM-DD
+    if(recordYear < currentYear){
+        return `${recordYear}-${month}-${day}`;
+    }
+    return `${month}-${day}`;
+}
+
 export default function StatsScreen(){
     const {characters, records} = useCharacter();
+
+    // 보스 목록 리스트
+    const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
+
     // 통계를 볼 캐릭터 필터링 상태 정의 (기본값: 첫번째 캐릭터)
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
+    const [selectedBossName, setSelectedBossName] = useState<string>(bossKeys[0]);
     
-    // 데이터 가공1: 선택된 캐릭터의 최근 5개 기록 추출 (그래프용)
-    const chartRecords = useMemo(()=>{
-        return records.filter(r => r.characterName === selectedCharName)
+    // 선택된 보스에 종속된 난이도 상태 관리 (보스가 변경될때마다 해당 보스의 첫번째 난이도로 자동 리셋)
+    const [selectedDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA[bossKeys[0]][0]);
+
+
+    useEffect(()=>{
+        if(BOSS_DATA[selectedBossName]){
+            setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
+        }
+    }, [selectedBossName]);
+    
+    // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준으로 날짜별 정렬
+    const filteredRecords = useMemo(()=>{
+        return records.filter(r => 
+            r.characterName === selectedCharName &&
+            r.bossName === selectedBossName &&
+            r.difficulty === selectedDifficulty
+        )
         .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
         .slice(-5); // 최근 5개만
-    }, [records, selectedCharName]);
+    }, [records, selectedCharName, selectedBossName, selectedDifficulty]);
 
-    // 데이터 가공2: 보스별 개인 최고 기록(최단 타임) 계산
+    // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
         const filtered = records.filter(r => r.characterName === selectedCharName);
+        // key: 보스이름, value: 클리어시간(초단위)
         const bossMap: {[key: string]: number} = {};
 
         filtered.forEach(r=>{
-            if(!bossMap[r.bossName] || r.clearTimeSec < bossMap[r.bossName]){
-                bossMap[r.bossName] = r.clearTimeSec;
+            // 리스트 식별 명칭에 난이도를 함께 결합 (예: '스우 (Hard)')
+            const displayName = `${r.bossName} (${r.difficulty})`
+
+            if(!bossMap[displayName] || r.clearTimeSec < bossMap[displayName]){
+                bossMap[displayName] = r.clearTimeSec;
             }
         });
 
-        return Object.entries(bossMap).map(([bossName, clearTimeSec]) => ({
-            bossName,
+        return Object.entries(bossMap).map(([bossDisplayName, clearTimeSec]) => ({
+            bossDisplayName,
             clearTimeSec
         }));
     }, [records, selectedCharName]);
 
-
-    // 차트 데이터 형식 설정
-    const chartData = useMemo(()=>{
-        if(chartRecords.length === 0){
+    // 차트 데이터 및 Y축 5분 단위 계산 로직
+    const chartConfigValues = useMemo(()=>{
+        if(filteredRecords.length === 0){
             return null;
         }
+        const minutesData = filteredRecords.map(r=>r.clearTimeSec / 60);
+        const maxMinutes = Math.max(...minutesData, 5);
+
+        const yAxisMax = Math.ceil(maxMinutes / 5) * 5;
+        const segments = yAxisMax / 5;
+        
         return {
-            labels: chartRecords.map((_, i)=>`${i+1}회차`),
-            datasets: [
-                {
-                    // 차트는 분(Minute) 단위 실수 형태로 변환하여 시각화
-                    data: chartRecords.map(r=>r.clearTimeSec / 60),
-                    color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`, // 메인 블루
-                    strokeWidth: 3
-                },
-            ],
+            data: {
+                labels: filteredRecords.map(r=>formatXAxisLabel(r.createdAt)),
+                datasets: [
+                    {
+                        data: minutesData,
+                        color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+                        strokeWidth: 3
+                    }
+                ],
+            },
+            yAxisMax,
+            segments
         };
-    }, [chartRecords]);
+
+    }, [filteredRecords]);
 
     const screenWidth = Dimensions.get("window").width;
     const chartWidth = Math.min(screenWidth - 64, 540); // 반응형 너비 대응
@@ -100,20 +149,76 @@ export default function StatsScreen(){
                 </Card.Content>
             </Card>
 
+            {/* 보스 및 난이도 선택 필터 세션 */}
+            <Card style={styles.card}>
+                <Card.Title title="보스 및 난이도 선택"/>
+                <Card.Content style={{gap:12}}>
+                    {/* 1차 카테고리: 보스 대분류 */}
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>보스명</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                            {bossKeys.map(boss=>{
+                                const isSelected = boss === selectedBossName;
+                                return (
+                                    <Surface
+                                        key={boss}
+                                        style={[styles.bossChip, isSelected && styles.bossChipActive]}
+                                        onTouchEnd={()=>setSelectedBossName(boss)}
+                                    >
+                                        <Text style={[styles.bossChipText, isSelected && styles.bossChipTextActive]}>
+                                            {boss}
+                                        </Text>
+                                    </Surface>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                    <Divider style={{marginVertical: 4}}/>
+
+                    {/* 2차 카테고리: 동적 난이도 소분류 */}
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>난이도</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                            {BOSS_DATA[selectedBossName]?.map(diff=>{
+                                const isSelected = diff === selectedDifficulty;
+                                return (
+                                    <Surface
+                                        key={diff}
+                                        style={[styles.diffChip, isSelected && styles.diffChipActive]}
+                                        onTouchEnd={()=>setSelectedDifficulty(diff)}
+                                    >
+                                        <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
+                                            {diff}
+                                        </Text>
+                                    </Surface>
+                                )
+                            })}
+                        </ScrollView>
+
+                    </View>
+                    
+                </Card.Content>
+
+            </Card>
+
             {/* 꺽은선 추이 그래프 세션 */}
             <Card style={styles.card}>
-                <Card.Title title="클리어 타임 추이" subtitle="최근 최대 5개 보스의 시간 변화 추적 (단위: 분)"/>
+                <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
                 <Card.Content style={styles.chartCenter}>
-                    {chartData ? (
+                    {chartConfigValues ? (
                         <LineChart
-                            data={chartData}
+                            data={chartConfigValues.data}
                             width={chartWidth}
-                            height={220}
+                            height={240}
+                            fromZero={true}
+                            yAxisLabel=""
+                            yAxisSuffix="분" 
+                            segments={chartConfigValues.segments}
                             chartConfig={{
                                 backgroundColor: '#ffffff',
                                 backgroundGradientFrom: '#ffffff',
                                 backgroundGradientTo: '#ffffff',
-                                decimalPlaces: 1,
+                                decimalPlaces: 0,
                                 color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
                                 labelColor: (opacity = 1) => `rgba(100, 100, 100, ${opacity})`,
                                 style: {borderRadius: 8},
@@ -138,10 +243,10 @@ export default function StatsScreen(){
                 <Card.Content>
                     {bestRecords.length > 0 ? (
                         bestRecords.map((item, index) => (
-                            <React.Fragment key={item.bossName}>
+                            <React.Fragment key={item.bossDisplayName}>
                                 <View style={styles.bestRow}>
                                     <List.Item
-                                        title={item.bossName}
+                                        title={item.bossDisplayName}
                                         titleStyle={styles.bossTitle}
                                         style={styles.listItem}
                                     />
@@ -201,6 +306,56 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: '#fff'
   },
+
+  filterSection: {
+    backgroundColor: 'transaprent'
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 4
+  },
+
+  // 대분류 보스 칩 스타일
+  bossChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 4,
+    backgroundColor: '#eceff1',
+    elevation: 1
+  },
+  bossChipActive: {
+    backgroundColor: '#37474f'
+  },
+  bossChipText: {
+    fontSize: 13,
+    color: '#455a64',
+    fontWeight: 'bold'
+  },
+  bossChipTextActive: {
+    color: '#fff'
+  },
+  // 소분류 난이도 칩 스타일
+  diffChip: {
+    paddingHorizontal: 14, 
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#f3e5f5',
+    elevation: 1
+  },
+  diffChipActive: {
+    backgroundColor: '#8e24aa'
+  },
+  diffChipText: {
+    fontSize: 12,
+    color: '#7b1fa2',
+    fontWeight: 'bold'
+  },
+  diffChipTextActive: {
+    color: '#fff'
+  },
+
 
   // 차트 레이아웃 
   chartCenter: {
