@@ -32,6 +32,16 @@ export default function TabLayout() {
           )
         }}
       />
+      {/* 보스 클리어 기록 설정 */}
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: '보스 클리어 기록 관리',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'analytics' : 'analytics-outline'} color={color} />
+          )
+        }}
+      />
       {/* 캐릭터 관리 탭 설정 */}
       <Tabs.Screen
         name="manage"
