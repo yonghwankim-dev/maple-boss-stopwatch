@@ -167,7 +167,7 @@ export default function StopwatchScreen() {
                   <Button
                     mode="outlined"
                     onPress={()=>setCharMenuVisible(true)}
-                    style={styles.pickerBtn}
+                    style={styles.singlePickerBtn}
                     contentStyle={styles.pickerBtnContent}
                   >
                     캐릭터: {selectedCharacter?.name ? selectedCharacter?.name : '없음'}
@@ -182,7 +182,15 @@ export default function StopwatchScreen() {
                   />
                 ))}
               </Menu>
+            </View>
+          </Card.Content>
+        </Card>
 
+        {/* 보스 및 난이도 설정 카드 */}
+        <Card style={styles.card}>
+          <Card.Title title="보스 및 난이도 설정" subtitle="기록을 측정할 보스 및 난이도를 선택하세요."/>
+          <Card.Content>
+            <View style={styles.pickerRow}>
               {/* 보스 선택 메뉴 */}
               <Menu
                 visible={bossMenuVisible}
@@ -223,13 +231,16 @@ export default function StopwatchScreen() {
                 ))}
               </Menu>
             </View>
+            <Divider/>
 
+            {/* 선택한 캐릭터 / 보스 / 난이도 출력 */}
             <Text style={styles.infoText}>
               타겟: <Text style={styles.boldChar}>
                 {selectedCharacter ? selectedCharacter.name : '미선택'}
-                </Text> ➡️ <Text style={styles.boldBoss}>{difficulty} {bossName}</Text>
+                </Text> ➡️ <Text style={styles.boldBoss}>{bossName} ({difficulty})</Text>
             </Text>
           </Card.Content>
+
         </Card>
 
         {/* 기록 모드 전환 탭 */}
@@ -473,6 +484,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#ccc'
+  },
+  singlePickerBtn:{
+    width: '100%',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginTop: 4
   },
   deleteBtn: {
     flex: 1,
