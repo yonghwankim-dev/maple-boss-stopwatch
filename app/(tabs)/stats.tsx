@@ -60,15 +60,34 @@ export default function StatsScreen(){
         }
     }, [selectedBossName]);
     
-    // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준으로 날짜별 정렬
+    // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
-        return records.filter(r => 
+        const filtered = records.filter(r => 
             r.characterName === selectedCharName &&
             r.bossName === selectedBossName &&
             r.difficulty === selectedDifficulty
-        )
-        .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
-        .slice(-5); // 최근 5개만
+        );
+
+        // 일자별 가장 빠른 기록을 담을 임시 맵 객체 선언
+        const dailyBestMap: { [dateKey: string]: typeof records[0] } = {};
+
+        filtered.forEach(record=>{
+            // X축 레이블과 동일하게 일자 포맷을 추출하여 key로 사용 (예: "06-06")
+            const dateKey = formatXAxisLabel(record.createdAt);
+
+            if(!dailyBestMap[dateKey]){
+                dailyBestMap[dateKey] = record;
+            }else{
+                // 동일 일자에 데이터가 여러개 존재하는 경우 최단 시간(최솟값) 기록으로 덮어쓰기
+                if(record.clearTimeSec < dailyBestMap[dateKey].clearTimeSec){
+                    dailyBestMap[dateKey] = record;
+                }
+            }
+        });
+
+        return Object.values(dailyBestMap)
+            .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
+            .slice(-5); // 최근 5개만
     }, [records, selectedCharName, selectedBossName, selectedDifficulty]);
 
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
@@ -226,6 +245,7 @@ export default function StatsScreen(){
                             fromZero={true}
                             yAxisLabel=""
                             yAxisSuffix="분" 
+                            ymax={chartConfigValues.yAxisMax}
                             segments={chartConfigValues.segments}
                             chartConfig={{
                                 backgroundColor: '#ffffff',
@@ -330,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   filterSection: {
-    backgroundColor: 'transaprent'
+    backgroundColor: 'transparent'
   },
   filterLabel: {
     fontSize: 13,
