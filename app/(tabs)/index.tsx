@@ -11,7 +11,7 @@ import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords } = useCharacter();
+  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
     
   // 보스 및 난이도 상태 관리
   const [bossName, setBossName] = useState<string>("스우");
@@ -51,7 +51,7 @@ export default function StopwatchScreen() {
     }
   };
 
-  const handleComplete = ()=>{
+  const handleComplete = async ()=>{
     if(!selectedCharacter){
       const errorMessage = "캐릭터 관리 탭에서 캐릭터를 먼저 추가해 주세요.";
       if(Platform.OS === 'web'){
@@ -75,10 +75,12 @@ export default function StopwatchScreen() {
     };
 
     setTempRecords((prevRecords)=>[newRecord, ...prevRecords]);
+
+    await saveToPersistent(newRecord);
   };
 
   // 수동 기록 저장 핸들러
-  const handleManualSave = () => {
+  const handleManualSave = async () => {
     if(!selectedCharacter){
       const errorMessage = "캐릭터 관리 탭에서 캐릭터를 먼저 추가해주세요.";
       if(Platform.OS === 'web'){
@@ -136,6 +138,7 @@ export default function StopwatchScreen() {
     };
 
     setTempRecords((prevRecords)=>[newRecord, ...prevRecords ]);
+    await saveToPersistent(newRecord);
 
     // 저장후 폼 초기화
     setManualMinutes('');
@@ -143,11 +146,8 @@ export default function StopwatchScreen() {
   };
 
   // 보스 클리어 기록 삭제 핸들러
-  const handleDeleteRecord = (id: string)=>{
-    const performDelete = ()=>{
-      setTempRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
-    }
-    performDelete();
+  const handleDeleteTempRecord = (id: string)=>{
+    setTempRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
   }
 
   return (
@@ -369,7 +369,7 @@ export default function StopwatchScreen() {
                       icon="delete-outline"
                       iconColor="#ff4d4d"
                       size={20}
-                      onPress={()=> handleDeleteRecord(item.id)}
+                      onPress={()=> handleDeleteTempRecord(item.id)}
                       style={styles.deleteIconBtn}
                     />
                   </DataTable.Cell>
