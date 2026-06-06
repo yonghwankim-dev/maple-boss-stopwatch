@@ -1,5 +1,5 @@
-import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, Surface, TextInput } from 'react-native-paper';
 
 import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
@@ -189,61 +189,81 @@ export default function StopwatchScreen() {
         {/* 보스 및 난이도 설정 카드 */}
         <Card style={styles.card}>
           <Card.Title title="보스 및 난이도 설정" subtitle="기록을 측정할 보스 및 난이도를 선택하세요."/>
-          <Card.Content style={{gap: 12}}>
+          <Card.Content style={{gap: 16}}>
+            {/* 6열 바둑판 그리드 형태의 보스 즉시 선택 구역 */}
             <View style={styles.dropdownWrapper}>
               <Text style={styles.dropdownLabel}> 보스명</Text>
-              {/* 보스 선택 메뉴 */}
-              <Menu
-                visible={bossMenuVisible}
-                onDismiss={()=>setBossMenuVisible(false)}
-                anchor={
-                  <Button 
-                    mode="outlined" 
-                    onPress={()=>setBossMenuVisible(true)} 
-                    style={styles.fullWidthPickerBtn}
-                    contentStyle={styles.pickerBtnContentExpanded}
-                    icon='sword'
-                  >
-                    {bossName}
-                  </Button>
-                }
-              >
-                {Object.keys(BOSS_DATA).map((boss)=>(
-                  <Menu.Item 
-                    key={boss} 
-                    onPress={()=> handleBossChange(boss)} 
-                    title={boss}
-                    titleStyle={boss === bossName ? styles.activeMenuItemText : null}
-                  />
-                ))}
-              </Menu>
+
+              <View style={styles.bossGridContainer}>
+                {Object.keys(BOSS_DATA).map((boss)=>{
+                  const isSelected = boss === bossName;
+                  return (
+                    <Pressable
+                      key={boss}
+                      onPress={()=>handleBossChange(boss)}
+                      style={styles.gridItemWrapper}
+                    >
+                      <Surface
+                        style={[
+                          styles.bossGridCell,
+                          isSelected && styles.bossGridCellActive
+                        ]}
+                        elevation={isSelected ? 2 : 0}
+                      >
+                        <Text
+                          style={[
+                            styles.bossGridText,
+                            isSelected && styles.bossGridTextActive
+                          ]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          {boss}
+                        </Text>
+                      </Surface>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
             <View style={styles.dropdownWrapper}>
               <Text style={styles.dropdownLabel}>난이도</Text>
-              {/* 보스 난이도 선택 메뉴 */}
-              <Menu
-                visible={diffMenuVisible}
-                onDismiss={()=>setDiffMenuVisible(false)}
-                anchor={
-                  <Button 
-                    mode="outlined" 
-                    onPress={()=>setDiffMenuVisible(true)} 
-                    style={styles.fullWidthPickerBtn}
-                    contentStyle={styles.pickerBtnContentExpanded}
-                    icon='seal'
-                  >
-                    {difficulty}
-                  </Button>
-                }
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
               >
-                {BOSS_DATA[bossName].map((diff)=>(
-                  <Menu.Item 
-                    key={diff} 
-                    onPress={()=> {setDifficulty(diff); setDiffMenuVisible(false);}} 
-                    title={diff}
-                    titleStyle={diff == difficulty ? styles.activeMenuItemText : null}/>
-                ))}
-              </Menu>
+                {BOSS_DATA[bossName].map(diff => {
+                  const isSelected = diff === difficulty;
+                  return (
+                    <Pressable
+                      key={diff}
+                      onPress={()=>setDifficulty(diff)}
+                      style={styles.pressableWrapper}
+                    >
+                      <Surface
+                        style={[
+                          styles.diffChip,
+                          isSelected && styles.diffChipActive
+                        ]}
+                        elevation={isSelected ? 1 : 0}
+                      >
+                        <Text
+                          style={[
+                            styles.diffChipText,
+                            isSelected && styles.diffChipTextActive
+                          ]}
+                        >
+                          {diff}
+                        </Text>
+
+                      </Surface>
+
+                    </Pressable>
+                  );
+                })}
+
+              </ScrollView>
             </View>
             <Divider/>
 
@@ -606,5 +626,77 @@ const styles = StyleSheet.create({
   cardDivider:{
     marginTop: 8,
     marginBottom: 4
+  },
+  // 6열 보스 그리드 레이아웃 스타일
+  bossGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -3,
+    marginTop: 4,
+    backgroundColor: 'transaprent'
+  },
+  gridItemWrapper: {
+    width: `${100 / 6}%`,
+    padding: 3,
+    aspectRatio: 1
+  },
+  bossGridCell: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#fafafa'
+  },
+  bossGridCellActive: {
+    borderColor: '#2196f3',
+    backgroundColor: '#e3f2fd'
+  },
+  bossGridText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    textAlign: 'center'
+  },
+  bossGridTextActive: {
+    fontWeight: 'bold',
+    color: '#2196f3'
+  },
+  // 난이도 수평 스크롤 행 스타일
+  chipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+    backgroundColor: 'transaprent'
+  },
+  pressableWrapper:{
+    backgroundColor: 'transaprent'
+  },
+  // 기본 칩 디자인
+  diffChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#fafafa',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  // 활성화시 칩 다지인
+  diffChipActive: {
+    borderColor: '#2196f3',
+    backgroundColor: '#e3f2fd'
+  },
+  // 기본 칩 텍스트
+  diffChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#666'
+  },
+  diffChipTextActive: {
+    fontWeight: 'bold',
+    color: '#2196f3'
   }
 });
