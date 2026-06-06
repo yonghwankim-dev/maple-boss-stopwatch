@@ -11,7 +11,7 @@ import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, selectedCharacter, setSelectedCharacter, records, setRecords } = useCharacter();
+  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords } = useCharacter();
     
   // 보스 및 난이도 상태 관리
   const [bossName, setBossName] = useState<string>("스우");
@@ -74,7 +74,7 @@ export default function StopwatchScreen() {
       createdAt: getTodayDate()
     };
 
-    setRecords((prevRecords)=>[newRecord, ...prevRecords]);
+    setTempRecords((prevRecords)=>[newRecord, ...prevRecords]);
   };
 
   // 수동 기록 저장 핸들러
@@ -135,7 +135,7 @@ export default function StopwatchScreen() {
       createdAt: manualDate
     };
 
-    setRecords((prevRecords)=>[newRecord, ...prevRecords ]);
+    setTempRecords((prevRecords)=>[newRecord, ...prevRecords ]);
 
     // 저장후 폼 초기화
     setManualMinutes('');
@@ -145,7 +145,7 @@ export default function StopwatchScreen() {
   // 보스 클리어 기록 삭제 핸들러
   const handleDeleteRecord = (id: string)=>{
     const performDelete = ()=>{
-      setRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
+      setTempRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
     }
     performDelete();
   }
@@ -153,7 +153,7 @@ export default function StopwatchScreen() {
   return (
     <Provider>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {/* 캐릭터 관리 카드 */}
+        {/* 캐릭터 필터 카드 */}
         <Card style={styles.card}>
           <Card.Title title="캐릭터 관리 및 선택" subtitle="스톱워치를 시작할 캐릭터를 선택해주세요"/>
           <Card.Content>
@@ -358,7 +358,7 @@ export default function StopwatchScreen() {
                 <DataTable.Title numeric style={styles.deleteHeader}>관리</DataTable.Title>
               </DataTable.Header>
 
-              {records.map((item)=>(
+              {tempRecords.map((item)=>(
                 <DataTable.Row key={item.id}>
                   <DataTable.Cell style={{flex: 1.2}}>{item.characterName}</DataTable.Cell>
                   <DataTable.Cell style={{flex: 2}}>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
@@ -376,7 +376,7 @@ export default function StopwatchScreen() {
                 </DataTable.Row>
               ))}
 
-              {records.length === 0 && (
+              {tempRecords.length === 0 && (
                 <Text style={styles.emptyText}>아직 추가된 보스 클리어 기록이 없습니다.</Text>
               )}
               

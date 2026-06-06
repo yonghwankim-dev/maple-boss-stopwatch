@@ -6,8 +6,8 @@ interface CharacterContextType{
     characters: Character[];
     selectedCharacter: Character | null;
     setSelectedCharacter: React.Dispatch<React.SetStateAction<Character | null>>;
-    records: BossRecord[];
-    setRecords: React.Dispatch<React.SetStateAction<BossRecord[]>>;
+    tempRecords: BossRecord[];
+    setTempRecords: React.Dispatch<React.SetStateAction<BossRecord[]>>;
     addCharacter: (name: string) => { success: boolean; error?: string };
     deleteCharacter: (id: string, name: string) => void;
     updateChracter: (id: string, name: string, newName: string) => {success: boolean; error?: string};
@@ -20,7 +20,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         {id: '1', name: '캐릭터1'}
     ]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
-    const [records, setRecords] = useState<BossRecord[]>([]);
+    const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
 
     // 캐릭터 추가 공통 로직
     const addCharacter = (name: string)=>{
@@ -57,7 +57,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         setCharacters(filteredChracters);
 
         // 연관 보스 클리어 기록 삭제
-        setRecords(prev=>prev.filter(record=>record.characterName !== name));
+        setTempRecords(prev=>prev.filter(record=>record.characterName !== name));
 
         // 선택된 캐릭터 예외 처리
         if(selectedCharacter?.id === id){
@@ -89,7 +89,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         setCharacters(prev => prev.map(char => char.id === id ? {...char, name: trimmedName} : char));
 
         // 연관된 보스 클리어 기록의 캐릭터 이름도 함께 동기화 업데이트
-        setRecords(prev => prev.map(record => record.characterName === oldName ? {...record, characterName: trimmedName} : record));
+        setTempRecords(prev => prev.map(record => record.characterName === oldName ? {...record, characterName: trimmedName} : record));
 
         // 현재 선택된 캐리겉의 이름이 바뀐 경우 상태 동기화
         if(selectedCharacter?.id === id){
@@ -106,8 +106,8 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             characters,
             selectedCharacter,
             setSelectedCharacter,
-            records,
-            setRecords,
+            tempRecords,
+            setTempRecords,
             addCharacter,
             deleteCharacter,
             updateChracter
