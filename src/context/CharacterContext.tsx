@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { BossRecord, Character } from "../types/boss";
 
 
@@ -6,14 +7,19 @@ interface CharacterContextType{
     characters: Character[];
     selectedCharacter: Character | null;
     setSelectedCharacter: React.Dispatch<React.SetStateAction<Character | null>>;
-    tempRecords: BossRecord[];
+    tempRecords: BossRecord[]; // 스톱워치 화면 전용 임시 데이터
     setTempRecords: React.Dispatch<React.SetStateAction<BossRecord[]>>;
+    persistentRecords: BossRecord[]; // 통계 및 히스토리 전용 영속적 데이터
     addCharacter: (name: string) => { success: boolean; error?: string };
     deleteCharacter: (id: string, name: string) => void;
     updateChracter: (id: string, name: string, newName: string) => {success: boolean; error?: string};
+    saveToPersistent: (record: BossRecord) => Promise<void>;
+    deleteFromPersistent: (id: string) => Promise<void>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
+
+const STORAGE_KEY = '@boss_clear_persistent_records';
 
 export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([
@@ -21,6 +27,47 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     ]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
+    const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
+
+    // 앱 구동시 로컬 저장소에서 영속 데이터 로드
+    useEffect(()=>{
+        const loadPersistentRecords = async ()=>{
+            try{
+                const storedData = await AsyncStorage.getItem(STORAGE_KEY);
+                if(storedData){
+                    setPersistentRecords(JSON.parse(storedData));
+                }
+            }catch(error){
+                console.error("Failed to load records from AsyncStorage", error);
+            }
+        };
+        loadPersistentRecords();
+    }, []);
+
+    // 영속 데이터 추가
+    const saveToPersistent = async (record: BossRecord)=>{
+        try{
+            const updated = [record, ...persistentRecords];
+            setPersistentRecords(updated);
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+            // TODO: 추후 Firebase Firestore 연동시 여기에 추가
+        }catch(error){
+            console.error("Failed to save record persistently", error);
+        }
+    };
+
+    // 영속 데이터 삭제
+    const deleteFromPersistent = async (id: string)=>{
+        try{
+            const updated = persistentRecords.filter(r=>r.id !== id);
+            setPersistentRecords(updated);
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        }catch(error){
+            console.error("Failed to delete persistent record", error);
+        }
+    };
+    
 
     // 캐릭터 추가 공통 로직
     const addCharacter = (name: string)=>{
@@ -108,9 +155,12 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             setSelectedCharacter,
             tempRecords,
             setTempRecords,
+            persistentRecords,
             addCharacter,
             deleteCharacter,
-            updateChracter
+            updateChracter,
+            saveToPersistent,
+            deleteFromPersistent
         }}>
             {children}
         </CharacterContext.Provider>
