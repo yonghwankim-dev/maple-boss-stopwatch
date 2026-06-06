@@ -189,8 +189,9 @@ export default function StopwatchScreen() {
         {/* 보스 및 난이도 설정 카드 */}
         <Card style={styles.card}>
           <Card.Title title="보스 및 난이도 설정" subtitle="기록을 측정할 보스 및 난이도를 선택하세요."/>
-          <Card.Content>
-            <View style={styles.pickerRow}>
+          <Card.Content style={{gap: 12}}>
+            <View style={styles.dropdownWrapper}>
+              <Text style={styles.dropdownLabel}> 보스명</Text>
               {/* 보스 선택 메뉴 */}
               <Menu
                 visible={bossMenuVisible}
@@ -199,18 +200,26 @@ export default function StopwatchScreen() {
                   <Button 
                     mode="outlined" 
                     onPress={()=>setBossMenuVisible(true)} 
-                    style={styles.pickerBtn}
-                    contentStyle={styles.pickerBtnContent}
+                    style={styles.fullWidthPickerBtn}
+                    contentStyle={styles.pickerBtnContentExpanded}
+                    icon='sword'
                   >
                     {bossName}
                   </Button>
                 }
               >
                 {Object.keys(BOSS_DATA).map((boss)=>(
-                  <Menu.Item key={boss} onPress={()=> handleBossChange(boss)} title={boss}/>
+                  <Menu.Item 
+                    key={boss} 
+                    onPress={()=> handleBossChange(boss)} 
+                    title={boss}
+                    titleStyle={boss === bossName ? styles.activeMenuItemText : null}
+                  />
                 ))}
               </Menu>
-
+            </View>
+            <View style={styles.dropdownWrapper}>
+              <Text style={styles.dropdownLabel}>난이도</Text>
               {/* 보스 난이도 선택 메뉴 */}
               <Menu
                 visible={diffMenuVisible}
@@ -219,15 +228,20 @@ export default function StopwatchScreen() {
                   <Button 
                     mode="outlined" 
                     onPress={()=>setDiffMenuVisible(true)} 
-                    style={styles.pickerBtn}
-                    contentStyle={styles.pickerBtnContent}
+                    style={styles.fullWidthPickerBtn}
+                    contentStyle={styles.pickerBtnContentExpanded}
+                    icon='seal'
                   >
                     {difficulty}
                   </Button>
                 }
               >
                 {BOSS_DATA[bossName].map((diff)=>(
-                  <Menu.Item key={diff} onPress={()=> {setDifficulty(diff); setDiffMenuVisible(false);}} title={diff}/>
+                  <Menu.Item 
+                    key={diff} 
+                    onPress={()=> {setDifficulty(diff); setDiffMenuVisible(false);}} 
+                    title={diff}
+                    titleStyle={diff == difficulty ? styles.activeMenuItemText : null}/>
                 ))}
               </Menu>
             </View>
@@ -500,6 +514,7 @@ const styles = StyleSheet.create({
   },
   pickerBtnContent: {
     height: 48,
+    flexDirection: 'row',
     justifyContent: 'center'
   },
   infoText: {
@@ -559,5 +574,37 @@ const styles = StyleSheet.create({
   deleteIconBtn: {
     margin: 0,
     padding: 0
+  },
+  // 드롭다운 한줄 래퍼 및 라벨 스타일
+  dropdownWrapper:{
+    width: '100%',
+    backgroundColor: 'transaprent'
+  },
+  dropdownLabel:{
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 4
+  },
+  fullWidthPickerBtn:{
+    width: '100%',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#fff'
+  },
+  pickerBtnContentExpanded: {
+    height: 48,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 4
+  },
+  activeMenuItemText: {
+    fontWeight: 'bold',
+    color: '#2196f3'
+  },
+  cardDivider:{
+    marginTop: 8,
+    marginBottom: 4
   }
 });
