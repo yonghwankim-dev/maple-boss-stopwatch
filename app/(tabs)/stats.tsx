@@ -4,7 +4,7 @@ import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
-import { Card, Divider, IconButton, List, Surface, Text } from "react-native-paper";
+import { Button, Card, Divider, IconButton, List, Menu, Provider, Surface, Text } from "react-native-paper";
 
 if(Platform.OS === 'web' && typeof window !== 'undefined'){
     const iconsole = window.console;
@@ -42,7 +42,8 @@ const formatXAxisLabel = (dateString: string)=>{
 
 export default function StatsScreen(){
     const {characters, persistentRecords} = useCharacter();
-
+    const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
+    
     // 보스 목록 리스트
     const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
 
@@ -148,156 +149,166 @@ export default function StatsScreen(){
     const chartWidth = Math.min(screenWidth - 64, 540); // 반응형 너비 대응
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-            {/* 캐릭터 퀵 셀렉터 (수평 스크롤 가로 바) */}
-            <Card style={styles.card}>
-                <Card.Title title="캐릭터 선택" subtitle="통계를 확인할 캐릭터를 탭하세요."/>
-                <Card.Content>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                        {characters.map(char => {
-                            const isSelected = char.name === selectedCharName;
-                            return (
-                                <Pressable
-                                    key={char.id}
-                                    onPress={()=>setSelectedCharName(char.name)}
-                                    style={styles.pressableWrapper}
-                                >
-                                    <Surface
-                                        style={[styles.chip, isSelected && styles.chipActive]}
-                                    >
-                                        <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-                                            {char.name}
-                                        </Text>
-                                    </Surface>
-                                </Pressable>
-                            );
-                        })}
-                    </ScrollView>
-                </Card.Content>
-            </Card>
-
-            {/* 보스 및 난이도 선택 필터 세션 */}
-            <Card style={styles.card}>
-                <Card.Title title="보스 및 난이도 선택"/>
-                <Card.Content style={{gap:12}}>
-                    {/* 1차 카테고리: 보스 대분류 */}
-                    <View style={styles.filterSection}>
-                        <Text style={styles.filterLabel}>보스명</Text>
+        <Provider>
+            <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+                {/* 캐릭터 퀵 셀렉터 (수평 스크롤 가로 바) */}
+                <Card style={styles.card}>
+                    <Card.Title title="캐릭터 선택" subtitle="통계를 확인할 캐릭터를 탭하세요."/>
+                    <Card.Content>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                            {bossKeys.map(boss=>{
-                                const isSelected = boss === selectedBossName;
+                            {characters.map(char => {
+                                const isSelected = char.name === selectedCharName;
                                 return (
                                     <Pressable
-                                        key={boss}
-                                        onPress={()=>setSelectedBossName(boss)}
+                                        key={char.id}
+                                        onPress={()=>setSelectedCharName(char.name)}
                                         style={styles.pressableWrapper}
                                     >
                                         <Surface
-                                            style={[styles.bossChip, isSelected && styles.bossChipActive]}
+                                            style={[styles.chip, isSelected && styles.chipActive]}
                                         >
-                                            <Text style={[styles.bossChipText, isSelected && styles.bossChipTextActive]}>
-                                                {boss}
+                                            <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                                                {char.name}
                                             </Text>
                                         </Surface>
                                     </Pressable>
-                                    
                                 );
                             })}
                         </ScrollView>
-                    </View>
-                    <Divider style={{marginVertical: 4}}/>
+                    </Card.Content>
+                </Card>
 
-                    {/* 2차 카테고리: 동적 난이도 소분류 */}
-                    <View style={styles.filterSection}>
-                        <Text style={styles.filterLabel}>난이도</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                            {BOSS_DATA[selectedBossName]?.map(diff=>{
-                                const isSelected = diff === selectedDifficulty;
-                                return (
-                                    <Pressable
-                                        key={diff}
-                                        onPress={()=>setSelectedDifficulty(diff)}
-                                        style={styles.pressableWrapper}
+                {/* 보스 및 난이도 선택 필터 세션 */}
+                <Card style={styles.card}>
+                    <Card.Title title="보스 및 난이도 선택"/>
+                    <Card.Content style={{gap:12}}>
+                        {/* 1차 카테고리: 보스 대분류 */}
+                        <View style={styles.filterSection}>
+                            <Text style={styles.filterLabel}>보스 선택</Text>
+                            <Menu
+                                visible={bossMenuVisible}
+                                onDismiss={()=>setBossMenuVisible(false)}
+                                anchor={
+                                    <Button
+                                        mode="outlined"
+                                        onPress={()=>setBossMenuVisible(true)}
+                                        style={styles.pickerBtn}
+                                        contentStyle={styles.pickerBtnContent}
+                                        icon="chevron-down"
+                                        labelStyle={styles.pickerBtnLabel}
                                     >
-                                        <Surface
-                                            style={[styles.diffChip, isSelected && styles.diffChipActive]}
-                                        >
-                                            <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
-                                                {diff}
-                                            </Text>
-                                        </Surface>
-                                    </Pressable>
-                                    
-                                )
-                            })}
-                        </ScrollView>
-
-                    </View>
-                    
-                </Card.Content>
-
-            </Card>
-
-            {/* 꺽은선 추이 그래프 세션 */}
-            <Card style={styles.card}>
-                <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
-                <Card.Content style={styles.chartCenter}>
-                    {chartConfigValues ? (
-                        <LineChart
-                            data={chartConfigValues.data}
-                            width={chartWidth}
-                            height={240}
-                            fromZero={true}
-                            yAxisLabel=""
-                            yAxisSuffix="분" 
-                            segments={chartConfigValues.segments}
-                            chartConfig={{
-                                backgroundColor: '#ffffff',
-                                backgroundGradientFrom: '#ffffff',
-                                backgroundGradientTo: '#ffffff',
-                                decimalPlaces: 0,
-                                color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
-                                labelColor: (opacity = 1) => `rgba(100, 100, 100, ${opacity})`,
-                                style: {borderRadius: 8},
-                                propsForDots: {r: '5', strokeWidth: '2', stroke: '#2196f3'},
-                            }}
-                            bezier // 곡선효과 적용
-                            style={styles.chartRadius}
-                            onDataPointClick={()=>{}}
-                        />
-                    ) : (
-                        <View style={styles.emptyContainer}>
-                            <IconButton icon="chart-timeline-variant" size={40} iconColor="#ccc"/>
-                            <Text style={styles.emptyText}>아직 이 캐릭터로 저장된 보스 클리어 기록이 없습니다.</Text>
-                        </View>
-                    )}
-                </Card.Content>
-            </Card>
-
-            {/* 보스별 최고 기록 요약 보드 */}
-            <Card style={styles.card}>
-                <Card.Title title="보스별 최고 기록" subtitle="가장 빠르게 클리어한 시간입니다."/>
-                <Card.Content>
-                    {bestRecords.length > 0 ? (
-                        bestRecords.map((item, index) => (
-                            <React.Fragment key={item.bossDisplayName}>
-                                <View style={styles.bestRow}>
-                                    <List.Item
-                                        title={item.bossDisplayName}
-                                        titleStyle={styles.bossTitle}
-                                        style={styles.listItem}
+                                        {selectedBossName ? selectedBossName : '보스를 선택하세요'}
+                                    </Button>
+                                }
+                            >
+                                {bossKeys.map((boss)=>(
+                                    <Menu.Item
+                                        key={boss}
+                                        onPress={()=>{
+                                            setSelectedBossName(boss);
+                                            setBossMenuVisible(false);
+                                        }}
+                                        title={boss}
+                                        titleStyle={boss === selectedBossName ? styles.activeMenuItemText : null}
                                     />
-                                    <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
-                                </View>
-                                {index < bestRecords.length - 1 && <Divider/>}
-                            </React.Fragment>
-                        ))
-                    ) : (
-                        <Text style={styles.emptyText}>기록이 존재하지 않습니다.</Text>                
-                    )}
-                </Card.Content>
-            </Card>
-        </ScrollView>
+                                ))}
+                            </Menu>
+                        </View>
+                        <Divider style={{marginVertical: 4}}/>
+
+                        {/* 2차 카테고리: 동적 난이도 소분류 */}
+                        <View style={styles.filterSection}>
+                            <Text style={styles.filterLabel}>난이도</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                                {BOSS_DATA[selectedBossName]?.map(diff=>{
+                                    const isSelected = diff === selectedDifficulty;
+                                    return (
+                                        <Pressable
+                                            key={diff}
+                                            onPress={()=>setSelectedDifficulty(diff)}
+                                            style={styles.pressableWrapper}
+                                        >
+                                            <Surface
+                                                style={[styles.diffChip, isSelected && styles.diffChipActive]}
+                                            >
+                                                <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
+                                                    {diff}
+                                                </Text>
+                                            </Surface>
+                                        </Pressable>
+                                        
+                                    )
+                                })}
+                            </ScrollView>
+
+                        </View>
+                        
+                    </Card.Content>
+
+                </Card>
+
+                {/* 꺽은선 추이 그래프 세션 */}
+                <Card style={styles.card}>
+                    <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
+                    <Card.Content style={styles.chartCenter}>
+                        {chartConfigValues ? (
+                            <LineChart
+                                data={chartConfigValues.data}
+                                width={chartWidth}
+                                height={240}
+                                fromZero={true}
+                                yAxisLabel=""
+                                yAxisSuffix="분" 
+                                segments={chartConfigValues.segments}
+                                chartConfig={{
+                                    backgroundColor: '#ffffff',
+                                    backgroundGradientFrom: '#ffffff',
+                                    backgroundGradientTo: '#ffffff',
+                                    decimalPlaces: 0,
+                                    color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+                                    labelColor: (opacity = 1) => `rgba(100, 100, 100, ${opacity})`,
+                                    style: {borderRadius: 8},
+                                    propsForDots: {r: '5', strokeWidth: '2', stroke: '#2196f3'},
+                                }}
+                                bezier // 곡선효과 적용
+                                style={styles.chartRadius}
+                                onDataPointClick={()=>{}}
+                            />
+                        ) : (
+                            <View style={styles.emptyContainer}>
+                                <IconButton icon="chart-timeline-variant" size={40} iconColor="#ccc"/>
+                                <Text style={styles.emptyText}>아직 이 캐릭터로 저장된 보스 클리어 기록이 없습니다.</Text>
+                            </View>
+                        )}
+                    </Card.Content>
+                </Card>
+
+                {/* 보스별 최고 기록 요약 보드 */}
+                <Card style={styles.card}>
+                    <Card.Title title="보스별 최고 기록" subtitle="가장 빠르게 클리어한 시간입니다."/>
+                    <Card.Content>
+                        {bestRecords.length > 0 ? (
+                            bestRecords.map((item, index) => (
+                                <React.Fragment key={item.bossDisplayName}>
+                                    <View style={styles.bestRow}>
+                                        <List.Item
+                                            title={item.bossDisplayName}
+                                            titleStyle={styles.bossTitle}
+                                            style={styles.listItem}
+                                        />
+                                        <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
+                                    </View>
+                                    {index < bestRecords.length - 1 && <Divider/>}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>기록이 존재하지 않습니다.</Text>                
+                        )}
+                    </Card.Content>
+                </Card>
+            </ScrollView>
+        </Provider>
+        
     )
 }
 
@@ -361,6 +372,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#666',
     marginBottom: 4
+  },
+  // 보스 콤보박스 스타일
+  pickerBtn: {
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#fff'
+  },
+  pickerBtnContent: {
+    height: 48,
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8
+  },
+  pickerBtnLabel: {
+    color: '#333',
+    fontSize: 15
+  },
+  activeMenuItemText:{
+    fontWeight: 'bold',
+    color: '#2196f3'
   },
 
   // 대분류 보스 칩 스타일
