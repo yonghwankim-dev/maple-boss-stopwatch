@@ -41,7 +41,7 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, tempRecords} = useCharacter();
+    const {characters, persistentRecords} = useCharacter();
 
     // 보스 목록 리스트
     const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
@@ -62,14 +62,14 @@ export default function StatsScreen(){
     
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
-        const filtered = tempRecords.filter(r => 
+        const filtered = persistentRecords.filter(r => 
             r.characterName === selectedCharName &&
             r.bossName === selectedBossName &&
             r.difficulty === selectedDifficulty
         );
 
         // 일자별 가장 빠른 기록을 담을 임시 맵 객체 선언
-        const dailyBestMap: { [dateKey: string]: typeof tempRecords[0] } = {};
+        const dailyBestMap: { [dateKey: string]: typeof persistentRecords[0] } = {};
 
         filtered.forEach(record=>{
             // X축 레이블과 동일하게 일자 포맷을 추출하여 key로 사용 (예: "06-06")
@@ -88,11 +88,11 @@ export default function StatsScreen(){
         return Object.values(dailyBestMap)
             .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
             .slice(-5); // 최근 5개만
-    }, [tempRecords, selectedCharName, selectedBossName, selectedDifficulty]);
+    }, [persistentRecords, selectedCharName, selectedBossName, selectedDifficulty]);
 
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
-        const filtered = tempRecords.filter(r => r.characterName === selectedCharName);
+        const filtered = persistentRecords.filter(r => r.characterName === selectedCharName);
         // key: 보스이름, value: 클리어시간(초단위)
         const bossMap: {[key: string]: number} = {};
 
@@ -109,7 +109,7 @@ export default function StatsScreen(){
             bossDisplayName,
             clearTimeSec
         }));
-    }, [tempRecords, selectedCharName]);
+    }, [persistentRecords, selectedCharName]);
 
     // 차트 데이터 및 Y축 5분 단위 계산 로직
     const chartConfigValues = useMemo(()=>{

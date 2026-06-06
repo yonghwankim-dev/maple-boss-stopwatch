@@ -74,9 +74,9 @@ export default function CharacterHistoryScreen(){
                                     description={`⏱️ 클리어 시간: ${item.clearTime}  |  📅 날짜: ${item.createdAt}`}
                                     descriptionStyle={styles.bossDescription}
                                     right={(props)=>{
-                                        <IconButton
+                                        return <IconButton
                                             {...props}
-                                            icon="delete-outlined"
+                                            icon="delete-outline"
                                             iconColor="#ff4d4d"
                                             size={22}
                                             onPress={()=>handleDeleteRecord(item.id)}
