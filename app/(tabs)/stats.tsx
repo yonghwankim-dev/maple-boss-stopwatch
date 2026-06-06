@@ -2,7 +2,7 @@ import { BOSS_DATA } from "@/constants/bossData";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useState } from "react";
-import { Dimensions, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
 import { Card, Divider, IconButton, List, Surface, Text } from "react-native-paper";
 
@@ -133,16 +133,19 @@ export default function StatsScreen(){
                         {characters.map(char => {
                             const isSelected = char.name === selectedCharName;
                             return (
-                                <Surface
+                                <Pressable
                                     key={char.id}
-                                    style={[styles.chip, isSelected && styles.chipActive]}
-                                    onTouchEnd={()=>setSelectedCharName(char.name)}
+                                    onPress={()=>setSelectedCharName(char.name)}
+                                    style={styles.pressableWrapper}
                                 >
-                                    <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-                                        {char.name}
-                                    </Text>
-
-                                </Surface>
+                                    <Surface
+                                        style={[styles.chip, isSelected && styles.chipActive]}
+                                    >
+                                        <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                                            {char.name}
+                                        </Text>
+                                    </Surface>
+                                </Pressable>
                             );
                         })}
                     </ScrollView>
@@ -160,15 +163,20 @@ export default function StatsScreen(){
                             {bossKeys.map(boss=>{
                                 const isSelected = boss === selectedBossName;
                                 return (
-                                    <Surface
+                                    <Pressable
                                         key={boss}
-                                        style={[styles.bossChip, isSelected && styles.bossChipActive]}
-                                        onTouchEnd={()=>setSelectedBossName(boss)}
+                                        onPress={()=>setSelectedBossName(boss)}
+                                        style={styles.pressableWrapper}
                                     >
-                                        <Text style={[styles.bossChipText, isSelected && styles.bossChipTextActive]}>
-                                            {boss}
-                                        </Text>
-                                    </Surface>
+                                        <Surface
+                                            style={[styles.bossChip, isSelected && styles.bossChipActive]}
+                                        >
+                                            <Text style={[styles.bossChipText, isSelected && styles.bossChipTextActive]}>
+                                                {boss}
+                                            </Text>
+                                        </Surface>
+                                    </Pressable>
+                                    
                                 );
                             })}
                         </ScrollView>
@@ -182,15 +190,20 @@ export default function StatsScreen(){
                             {BOSS_DATA[selectedBossName]?.map(diff=>{
                                 const isSelected = diff === selectedDifficulty;
                                 return (
-                                    <Surface
+                                    <Pressable
                                         key={diff}
-                                        style={[styles.diffChip, isSelected && styles.diffChipActive]}
-                                        onTouchEnd={()=>setSelectedDifficulty(diff)}
+                                        onPress={()=>setSelectedDifficulty(diff)}
+                                        style={styles.pressableWrapper}
                                     >
-                                        <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
-                                            {diff}
-                                        </Text>
-                                    </Surface>
+                                        <Surface
+                                            style={[styles.diffChip, isSelected && styles.diffChipActive]}
+                                        >
+                                            <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
+                                                {diff}
+                                            </Text>
+                                        </Surface>
+                                    </Pressable>
+                                    
                                 )
                             })}
                         </ScrollView>
@@ -279,6 +292,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: "#fff"
   },
+  // 웹에서 마우스 커서를 올렸을때, 클릭 가능한 손가락 모양(pointer)이 나오도록 설정
+  pressableWrapper: {
+    ...Platform.select({
+        web: {
+            cursor: 'pointer'
+        },
+    }),
+  },
+
   // 퀵 캐릭터 셀렉터 스타일
   chipRow: {
     flexDirection: 'row',
