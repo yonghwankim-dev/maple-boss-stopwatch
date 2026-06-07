@@ -37,9 +37,7 @@ const RECORD_STORAGE_KEY = '@boss_clear_persistent_records';
 const BOSS_DIFF_MAP_KEY = '@boss_difficulty_memorize_map';
 
 export function CharacterProvider({ children }: { children: ReactNode }){
-    const [characters, setCharacters] = useState<Character[]>([
-        {id: '1', name: '캐릭터1'}
-    ]);
+    const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
     const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
@@ -259,7 +257,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             // success, count json 데이터 리턴
             return {
                 success: true,
-                content: importedCount
+                count: importedCount
             };
         }catch(error){
             console.error("Failed to import persistent records", error);
@@ -270,7 +268,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             };
         }
         
-    }
+    };
 
     return (
         <CharacterContext.Provider value={{

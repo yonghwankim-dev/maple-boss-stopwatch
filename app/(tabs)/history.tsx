@@ -1,12 +1,22 @@
 import { useCharacter } from "@/src/context/CharacterContext";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, persistentRecords, deleteFromPersistent} = useCharacter();
+    const {characters, persistentRecords, deleteFromPersistent, importPersistentRecords} = useCharacter();
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
+
+    useEffect(() => {
+        // 현재 선택된 캐릭터명이 비어있고, 불러온 캐릭터 목록에 데이터가 존재할 때
+        if (!selectedCharName && characters.length > 0) {
+            setSelectedCharName(characters[0].name);
+        }
+    }, [characters, selectedCharName]);
+
+    // 숨겨진 HTML file input에 접근하기 위한 ref 선언
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const filteredRecords = useMemo(()=>{
         if(!selectedCharName){
@@ -30,6 +40,7 @@ export default function CharacterHistoryScreen(){
             }else{
                 Alert.alert("알림", message);
             }
+            return;
         }
 
         // JSON 문자열로 변환
@@ -58,6 +69,54 @@ export default function CharacterHistoryScreen(){
         }
     };
 
+    const handleImportJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if(!file){
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e)=>{
+            try{
+                const text = e.target?.result as string;
+                const parsedData = JSON.parse(text);
+
+                // 컨텍스트 병합 호출
+                const result = await importPersistentRecords(parsedData);
+
+                if(result.success){
+                    alert(`성공적으로 데이터를 가져왔습니다!\n총 ${result.count}개의 기록이 병합/업데이트 되었습니다.`);
+
+                    // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
+                    if(characters.length > 0 && !selectedCharName){
+                        setSelectedCharName(characters[0].name);
+                    }
+                }else{
+                    alert(`가져오기 실패: ${result.error}`);
+                }
+
+            }catch(error){
+                console.error("JSON 파싱 에러:", error);
+                alert("올바른 JSON 파일 구조가 아닙니다. 파일을 확인해 주세요.");
+            }
+
+            // 동일한 백업 파일을 연속해서 올려도 onChange가 다시 튀도록 트리거 필드 초기화
+            if(fileInputRef.current){
+                fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // 버튼 클릭시 가상 file input 창을 강제 트리거하는 대리 핸들러
+    const triggerFileSelect = ()=>{
+        if(Platform.OS === 'web' && fileInputRef.current){
+            fileInputRef.current.click();
+        }else if(Platform.OS !== 'web'){
+            alert("가져오기 기능은 웹 브라우저 환경 전용입니다.");
+        }
+    }
+
     return (
         <Provider>
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -65,15 +124,37 @@ export default function CharacterHistoryScreen(){
                 <Card style={styles.card}>
                     <Card.Title title="데이터 관리" subtitle="전체 데이터를 백업하세요"/>
                     <Card.Content>
-                        <Button
-                            mode="contained"
-                            icon="download"
-                            onPress={handleExportJSON}
-                            style={styles.exportBtn}
-                            contentStyle={styles.exportBtnContent}
-                        >
-                            JSON 내보내기
-                        </Button>
+                        {/* 웹 전용 숨김 폼 파일 인풋 */}
+                        {Platform.OS === 'web' && (
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept=".json"
+                                onChange={handleImportJSON}
+                                style={{display: 'none'}}
+                            />
+                        )}
+                        <View style={styles.dataBtnRow}>
+                            <Button
+                                mode="contained"
+                                icon="download"
+                                onPress={handleExportJSON}
+                                style={[styles.dataBtn, styles.exportColor]}
+                                contentStyle={styles.dataBtnContent}
+                            >
+                                JSON 내보내기
+                            </Button>
+                            <Button
+                                mode="contained"
+                                icon="upload"
+                                onPress={triggerFileSelect}
+                                style={[styles.dataBtn, styles.importColor]}
+                                contentStyle={styles.dataBtnContent}
+                            >
+                                JSON 가져오기
+                            </Button>
+                        </View>
+                        
                         
                     </Card.Content>
                 </Card>
@@ -221,5 +302,26 @@ const styles = StyleSheet.create({
   exportBtnContent: {
     height: 44,
     justifyContent: 'center'
+  },
+
+  // 데이터 제어 버튼 그룹 레이아웃 가로 행 스타일 정의
+  dataBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: 'transparent'
+  },
+  dataBtn: {
+    flex: 1,
+    borderRadius: 4
+  },
+  dataBtnContent: {
+    height: 44,
+    justifyContent: 'center'
+  },
+  exportColor: {
+    backgroundColor: '#009688'
+  },
+  importColor: {
+    backgroundColor: '#673ab7'
   }
 });
