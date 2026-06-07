@@ -1,6 +1,6 @@
 import { useCharacter } from "@/src/context/CharacterContext";
 import React, { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
@@ -21,9 +21,63 @@ export default function CharacterHistoryScreen(){
         await deleteFromPersistent(id);
     };
 
+    const handleExportJSON = async ()=>{
+        // 내보낼 데이터가 없는 경우 경고 메시지 출력
+        if(persistentRecords.length === 0){
+            const message = "내보낼 보스 클리어 기록이 없습니다.";
+            if(Platform.OS === 'web'){
+                alert(message);
+            }else{
+                Alert.alert("알림", message);
+            }
+        }
+
+        // JSON 문자열로 변환
+        const jsonData = JSON.stringify(persistentRecords, null, 2);
+        const filename = `boss_clear_records_${new Date().toISOString().split('T')[0]}.json`;
+
+        // 플랫폼별 내보내기 분기 처리
+        if(Platform.OS === 'web'){
+            // Web: Blob 생성후 다운로드 링크 트리거
+            try{
+                const blob = new Blob([jsonData], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }catch(error){
+                console.error('fail web download', error);
+                alert("파일 다운로드 중 오류가 발생했습니다.");
+            }
+        }else{
+            Alert.alert("경고", "iOS/Android 환경에서는 지원하지 않는 기능입니다.");
+        }
+    };
+
     return (
         <Provider>
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+                {/* 데이터 내보내기 구역 */}
+                <Card style={styles.card}>
+                    <Card.Title title="데이터 관리" subtitle="전체 데이터를 백업하세요"/>
+                    <Card.Content>
+                        <Button
+                            mode="contained"
+                            icon="download"
+                            onPress={handleExportJSON}
+                            style={styles.exportBtn}
+                            contentStyle={styles.exportBtnContent}
+                        >
+                            JSON 내보내기
+                        </Button>
+                        
+                    </Card.Content>
+                </Card>
+
                 {/* 캐릭터 필터 선택 */}
                 <Card style={styles.card}>
                     <Card.Title title="캐릭터별 기록 조회" subtitle="조회할 캐릭터를 선택하세요."/>
@@ -57,7 +111,7 @@ export default function CharacterHistoryScreen(){
                     </Card.Content>
                 </Card>
 
-                {/* 필터링된 보스 클리어 리스트 출력 구역 */}
+                {/* 보스 클리어 리스트 출력 구역 */}
                 <Card style={styles.card}>
                     <Card.Title
                         title={selectedCharName ? `[${selectedCharName}] 보스 클리어 기록` : '보스 클리어 기록'}
@@ -158,5 +212,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#999',
     fontSize: 14
+  },
+  // JSON 내보내기 버튼 스타일
+  exportBtn:{
+    borderRadius: 4,
+    backgroundColor: '#009688'
+  },
+  exportBtnContent: {
+    height: 44,
+    justifyContent: 'center'
   }
 });
