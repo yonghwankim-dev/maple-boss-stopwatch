@@ -41,8 +41,9 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, persistentRecords} = useCharacter();
+    const {characters, persistentRecords, bossDifficultyMap, updateBossDifficulty} = useCharacter();
     const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
+    
     
     // 보스 목록 리스트
     const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
@@ -50,16 +51,27 @@ export default function StatsScreen(){
     // 통계를 볼 캐릭터 필터링 상태 정의 (기본값: 첫번째 캐릭터)
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
     const [selectedBossName, setSelectedBossName] = useState<string>(bossKeys[0]);
-    
-    // 선택된 보스에 종속된 난이도 상태 관리 (보스가 변경될때마다 해당 보스의 첫번째 난이도로 자동 리셋)
     const [selectedDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA[bossKeys[0]][0]);
-
+    
 
     useEffect(()=>{
-        if(BOSS_DATA[selectedBossName]){
-            setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
+        // 등록된 캐릭터가 로드되었을때 초기 선택 캐릭터명 동기화
+        if(characters.length > 0 && !selectedCharName){
+            setSelectedCharName(characters[0].name);
         }
-    }, [selectedBossName]);
+    },[characters]);
+
+    // 선택된 보스나 메모라이즈 맵이 로드/변경될때마다 난이도 매칭 제어
+    useEffect(()=>{
+        if(BOSS_DATA[selectedBossName]){
+            const memorizedDifficulty = bossDifficultyMap[selectedBossName];
+            if(memorizedDifficulty && BOSS_DATA[selectedBossName].includes(memorizedDifficulty)){
+                setSelectedDifficulty(memorizedDifficulty);
+            }else{
+                setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
+            }        
+        }
+    }, [selectedBossName, bossDifficultyMap]);
     
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
@@ -145,6 +157,29 @@ export default function StatsScreen(){
 
     }, [filteredRecords]);
 
+    // 보스 변경 핸들러
+    const handleBossChange = (boss: string)=>{
+        // selectedBossName 상태 변경
+        setSelectedBossName(boss);
+        // 보스 메뉴 닫기
+        setBossMenuVisible(false);
+        // 이전에 선택한 보스 난이도를 현재 선택된 보스 난이도에 적용하기
+        const memorizedDifficulty = bossDifficultyMap[boss];
+        if(memorizedDifficulty && BOSS_DATA[boss].includes(memorizedDifficulty)){
+            setSelectedDifficulty(memorizedDifficulty);
+        }else{
+            setSelectedDifficulty(BOSS_DATA[boss][0]);
+        }
+    }
+
+    const handleBossDifficultyChange = async (difficulty: string)=>{
+        // 선택된 난이도 변경
+        setSelectedDifficulty(difficulty);
+        
+        // 저장소에 난이도 값 업데이트
+        await updateBossDifficulty(selectedBossName, difficulty);
+    };
+
     const screenWidth = Dimensions.get("window").width;
     const chartWidth = Math.min(screenWidth - 64, 540); // 반응형 너비 대응
 
@@ -204,10 +239,7 @@ export default function StatsScreen(){
                                 {bossKeys.map((boss)=>(
                                     <Menu.Item
                                         key={boss}
-                                        onPress={()=>{
-                                            setSelectedBossName(boss);
-                                            setBossMenuVisible(false);
-                                        }}
+                                        onPress={()=>{handleBossChange(boss)}}
                                         title={boss}
                                         titleStyle={boss === selectedBossName ? styles.activeMenuItemText : null}
                                     />
@@ -225,7 +257,7 @@ export default function StatsScreen(){
                                     return (
                                         <Pressable
                                             key={diff}
-                                            onPress={()=>setSelectedDifficulty(diff)}
+                                            onPress={()=>handleBossDifficultyChange(diff)}
                                             style={styles.pressableWrapper}
                                         >
                                             <Surface

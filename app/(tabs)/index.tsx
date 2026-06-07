@@ -7,11 +7,11 @@ import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
 import { formatTime, getTodayDate } from '@/src/utils/timeFormatter';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
+  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent, bossDifficultyMap, updateBossDifficulty } = useCharacter();
     
   // 보스 및 난이도 상태 관리
   const [bossName, setBossName] = useState<string>("스우");
@@ -19,8 +19,6 @@ export default function StopwatchScreen() {
 
   // UI 메뉴 오픈 여부 제어 상태
   const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
-  const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
-  const [diffMenuVisible, setDiffMenuVisible] = useState<boolean>(false);
 
   // 기록 방식 상태 관리 ('timer': 스톱워치, 'manual': 직접입력)
   const [recordMode, setRecordMode] = useState<'timer' | 'manual'>('timer');
@@ -30,12 +28,31 @@ export default function StopwatchScreen() {
   const [manualSeconds, setManualSeconds] = useState<string>('');
   const [manualDate, setManualDate] = useState<string>(getTodayDate());
   
+  useEffect(()=>{
+    if(bossDifficultyMap[bossName]){
+      setDifficulty(bossDifficultyMap[bossName]);
+    }else if(BOSS_DATA[bossName]){
+      setDifficulty(BOSS_DATA[bossName][0]);
+    }
+  },[bossName, bossDifficultyMap]);
+
   // 보스 변경 핸들러
   const handleBossChange = (selectedBoss: string) => {
     setBossName(selectedBoss);
-    setDifficulty(BOSS_DATA[selectedBoss][0]);
-    setBossMenuVisible(false);
+    // 이전에 이 보스에서 선택했던 난이도가 있다면 불러오고, 없으면 첫 난이도로 지정
+    const memorizeDifficulty = bossDifficultyMap[selectedBoss];
+    if(memorizeDifficulty && BOSS_DATA[selectedBoss].includes(memorizeDifficulty)){
+      setDifficulty(memorizeDifficulty);
+    }else{
+      setDifficulty(BOSS_DATA[selectedBoss][0]);
+    }
   };
+
+  // 보스 난이도 변경 핸들러
+  const handleBossDifficultyChange = async (selectedDifficulty: string)=>{
+    setDifficulty(selectedDifficulty);
+    await updateBossDifficulty(bossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
+  }
 
   const handleReset = ()=>{
     const message = "시간을 초기화하시겠습니까?";
@@ -238,7 +255,7 @@ export default function StopwatchScreen() {
                   return (
                     <Pressable
                       key={diff}
-                      onPress={()=>setDifficulty(diff)}
+                      onPress={()=>handleBossDifficultyChange(diff)}
                       style={styles.pressableWrapper}
                     >
                       <Surface
