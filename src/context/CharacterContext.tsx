@@ -21,12 +21,17 @@ interface CharacterContextType{
     addCharacter: (name: string) => Promise<{ success: boolean; error?: string }>;
     deleteCharacter: (id: string, name: string) => Promise<void>;
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
+
+    /* 보스 난이도 메모라이즈 기능 */
+    bossDifficultyMap: Record<string, string>; // 예: {"스우": "Hard", "루시드": "Hard"}
+    updateBossDifficulty: (bossName: string, difficulty: string)=> Promise<void>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
 
 const CHARACTERS_STORAGE_KEY = '@boss_clear_characters_list';
 const RECORD_STORAGE_KEY = '@boss_clear_persistent_records';
+const BOSS_DIFF_MAP_KEY = '@boss_difficulty_memorize_map';
 
 export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([
@@ -35,7 +40,8 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
     const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
-
+    const [bossDifficultyMap, setBossDifficultyMap] = useState<Record<string, string>>({});
+    
     // 앱 구동시 로컬 저장소에서 영속 데이터 로드
     useEffect(()=>{
         const loadInitialStorageData = async ()=>{
@@ -64,6 +70,12 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 const storedData = await AsyncStorage.getItem(RECORD_STORAGE_KEY);
                 if(storedData){
                     setPersistentRecords(JSON.parse(storedData));
+                }
+
+                // 3. 보스별 최근 난이도 선택 맵 로드
+                const storedMap = await AsyncStorage.getItem(BOSS_DIFF_MAP_KEY);
+                if(storedMap){
+                    setBossDifficultyMap(JSON.parse(storedMap));
                 }
             }catch(error){
                 console.error("Failed to load records from AsyncStorage", error);
@@ -194,6 +206,20 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     }
 
+    // 보스 난이도 선택 메모라이즈 업데이트 기능
+    const updateBossDifficulty = async (bossName: string, difficulty: string)=>{
+        try{
+            const updatedBossDifficultyMap = {
+            ...bossDifficultyMap,
+            [bossName]: difficulty
+            };
+            setBossDifficultyMap(updatedBossDifficultyMap);
+            await AsyncStorage.setItem(BOSS_DIFF_MAP_KEY, JSON.stringify(updatedBossDifficultyMap));
+        }catch(error){
+            console.error("Failed to save boss difficulty map", error);
+        }
+    };
+
     return (
         <CharacterContext.Provider value={{
             characters,
@@ -206,7 +232,9 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             deleteCharacter,
             updateChracter,
             saveToPersistent,
-            deleteFromPersistent
+            deleteFromPersistent,
+            bossDifficultyMap,
+            updateBossDifficulty
         }}>
             {children}
         </CharacterContext.Provider>
