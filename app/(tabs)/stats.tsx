@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    backgroundColor: 'transaprent'
+    backgroundColor: 'transparent'
   },
   chartRadius: {
     borderRadius: 8,
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'transaprent'
+    backgroundColor: 'transparent'
   },
   listItem: {
     flex: 1,
