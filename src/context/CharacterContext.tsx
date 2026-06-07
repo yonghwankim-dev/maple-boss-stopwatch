@@ -25,6 +25,9 @@ interface CharacterContextType{
     /* 보스 난이도 메모라이즈 기능 */
     bossDifficultyMap: Record<string, string>; // 예: {"스우": "Hard", "루시드": "Hard"}
     updateBossDifficulty: (bossName: string, difficulty: string)=> Promise<void>;
+
+    /* JSON 데이터 기반 보스 클리어 기록 가져오기 */
+    importPersistentRecords: (records: BossRecord[]) => Promise<{success: boolean; count: number; error?: string}>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
@@ -108,7 +111,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     };
     
-
     // 캐릭터 추가 공통 로직
     const addCharacter = async (name: string)=>{
         const trimmedName = name.trim();
@@ -220,6 +222,56 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     };
 
+    const importPersistentRecords = async (incomingRecords: BossRecord[])=>{
+        try{
+            // 데이터 무결성 검증 (배열 형태 확인)
+            if(!Array.isArray(incomingRecords)){
+                return {
+                    success: false,
+                    count: 0,
+                    error: "올바른 JSON 데이터 형식이 아닙니다. (배열이 아님)"
+                };
+            }
+            
+            // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
+            const recordMap = new Map<string, BossRecord>();
+            persistentRecords.forEach(r=>{
+                if(r.id){
+                    recordMap.set(r.id, r);
+                }
+            });
+
+            let importedCount = 0;
+            // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
+            incomingRecords.forEach(incoming=>{
+                if(incoming.id && incoming.bossName && incoming.characterName){
+                    recordMap.set(incoming.id, incoming);
+                    importedCount++;
+                }
+            });
+
+            // Map을 다시 배열로 변환하고 최신 날짜 순(createdAt 내림차순)으로 정렬
+            const mergedRecords = Array.from(recordMap.values())
+                                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            // 상태 업데이트 및 스토리지 영속화
+            setPersistentRecords(mergedRecords);
+            await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
+            // success, count json 데이터 리턴
+            return {
+                success: true,
+                content: importedCount
+            };
+        }catch(error){
+            console.error("Failed to import persistent records", error);
+            return {
+                success: false,
+                count : 0,
+                error : "데이터 동기화 중 오류가 발생했습니다."
+            };
+        }
+        
+    }
+
     return (
         <CharacterContext.Provider value={{
             characters,
@@ -234,7 +286,8 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             saveToPersistent,
             deleteFromPersistent,
             bossDifficultyMap,
-            updateBossDifficulty
+            updateBossDifficulty,
+            importPersistentRecords
         }}>
             {children}
         </CharacterContext.Provider>
