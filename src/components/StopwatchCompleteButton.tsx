@@ -1,5 +1,6 @@
 import { Button } from "react-native-paper";
-import { StopwatchButtonStyle } from "../styles/StopwatchButtonStyle";
+import { StopwatchButtonStyle } from "../styles/stopwatchButtonStyle";
+
 
 
 

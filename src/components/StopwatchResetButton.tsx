@@ -1,6 +1,6 @@
 import { Alert, Platform } from "react-native";
 import { Button } from "react-native-paper";
-import { StopwatchButtonStyle } from "../styles/StopwatchButtonStyle";
+import { StopwatchButtonStyle } from "../styles/stopwatchButtonStyle";
 
 
 interface StopwatchResetButtonProps{
