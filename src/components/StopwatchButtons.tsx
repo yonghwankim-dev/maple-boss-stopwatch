@@ -7,7 +7,7 @@ interface StopwatchButtonsProps{
     isRunning: boolean;
     start: () => void;
     pause: () => void;
-    handleReset: () => void;
+    reset: () => void;
     handleComplete: () => void;
 }
 
@@ -15,9 +15,10 @@ export default function StopwatchButtons({
     isRunning,
     start,
     pause,
-    handleReset,
+    reset,
     handleComplete,
 }: StopwatchButtonsProps){
+    
     return (
         /* 스톱워치 버튼 영역 */
         <View style={styles.buttonRow}>
@@ -28,7 +29,7 @@ export default function StopwatchButtons({
             />
 
             <StopwatchResetButton
-                handleReset={handleReset}
+                reset={reset}
             />
 
             <StopwatchCompleteButton

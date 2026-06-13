@@ -55,21 +55,6 @@ export default function StopwatchScreen() {
     await updateBossDifficulty(bossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
   }
 
-  // 초기화 버튼 핸들러
-  const handleReset = ()=>{
-    const message = "시간을 초기화하시겠습니까?";
-    if(Platform.OS === 'web'){
-      if(window.confirm(message)){
-        reset();
-      }
-    }else{
-      Alert.alert("초기화", message, [
-        {text: "취소", style: "cancel"},
-        {text: "확인", onPress: reset}
-      ])
-    }
-  };
-
   const handleComplete = async ()=>{
     if(!selectedCharacter){
       const errorMessage = "캐릭터 관리 탭에서 캐릭터를 먼저 추가해 주세요.";
@@ -329,7 +314,7 @@ export default function StopwatchScreen() {
                 isRunning={isRunning}
                 start={start}
                 pause={pause}
-                handleReset={handleReset}
+                reset={reset}
                 handleComplete={handleComplete}
               />
             </Card.Content>
