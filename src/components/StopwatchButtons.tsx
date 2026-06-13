@@ -1,5 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import { Button } from "react-native-paper";
+import StopwatchResetButton from "./StopwatchResetButton";
 import StopwatchStartButton from "./StopwatchStartButton";
 
 interface StopwatchButtonsProps{
@@ -26,15 +27,9 @@ export default function StopwatchButtons({
                 pause={pause}
             />
 
-            <Button
-                mode="contained"
-                onPress={handleReset}
-                style={[styles.fullBtn, styles.resetBtn]}
-                labelStyle={styles.btnLabel}
-                icon="refresh"
-            >
-                초기화
-            </Button>
+            <StopwatchResetButton
+                handleReset={handleReset}
+            />
 
             <Button
                 mode="contained"
