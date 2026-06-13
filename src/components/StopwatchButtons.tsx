@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { Button } from "react-native-paper";
+import StopwatchCompleteButton from "./StopwatchCompleteButton";
 import StopwatchResetButton from "./StopwatchResetButton";
 import StopwatchStartButton from "./StopwatchStartButton";
 
@@ -31,17 +31,10 @@ export default function StopwatchButtons({
                 handleReset={handleReset}
             />
 
-            <Button
-                mode="contained"
-                onPress={handleComplete}
-                style={styles.fullBtn}
-                labelStyle={styles.btnLabel}
-                icon="check-bold"
-                disabled={!isRunning}
-                buttonColor={isRunning ? '#2196f3' : '#b0bec5'}
-            >
-                완료
-            </Button>
+            <StopwatchCompleteButton
+                isRunning={isRunning}
+                handleComplete={handleComplete}
+            />
         </View>
     );
 }
@@ -51,19 +44,5 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: '100%',
         backgroundColor: 'transparent'
-    },
-    fullBtn: {
-        flex: 1,
-        borderRadius: 0,
-        height: 52,
-        justifyContent: 'center'
-    },
-    resetBtn: {
-        backgroundColor: '#424242'
-    },
-    btnLabel: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        marginVertical: 0
     }
 });
