@@ -11,6 +11,7 @@ interface StopwatchButtonsProps{
     handleComplete: () => void;
 }
 
+/* 스톱워치 버튼 영역 */
 export default function StopwatchButtons({
     isRunning,
     start,
@@ -20,7 +21,6 @@ export default function StopwatchButtons({
 }: StopwatchButtonsProps){
     
     return (
-        /* 스톱워치 버튼 영역 */
         <View style={styles.buttonRow}>
             <StopwatchStartButton
                 isRunning={isRunning}
