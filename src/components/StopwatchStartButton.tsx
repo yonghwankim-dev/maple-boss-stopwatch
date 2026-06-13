@@ -1,5 +1,5 @@
 import { Button } from "react-native-paper";
-import { stopwatchButtonStyle } from "../styles/stopwatchButtonStyle";
+import { StopwatchButtonStyle } from "../styles/StopwatchButtonStyle";
 
 
 interface StopwatchStartButtonProps{
@@ -28,8 +28,8 @@ export default function StopwatchStartButton({
         <Button
             mode="contained"
             onPress={onPress}
-            style={stopwatchButtonStyle.fullBtn}
-            labelStyle={stopwatchButtonStyle.btnLabel}
+            style={StopwatchButtonStyle.fullBtn}
+            labelStyle={StopwatchButtonStyle.btnLabel}
             icon={icon}
             buttonColor={buttonColor}
         >

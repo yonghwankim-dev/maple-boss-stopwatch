@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 
-export const stopwatchButtonStyle = StyleSheet.create({
+export const StopwatchButtonStyle = StyleSheet.create({
     fullBtn: {
         flex: 1,
         borderRadius: 0,
