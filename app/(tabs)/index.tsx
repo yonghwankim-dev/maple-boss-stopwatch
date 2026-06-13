@@ -3,6 +3,7 @@ import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, Segmented
 
 import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
+import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
@@ -53,20 +54,6 @@ export default function StopwatchScreen() {
     setDifficulty(selectedDifficulty);
     await updateBossDifficulty(bossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
   }
-
-  const handleReset = ()=>{
-    const message = "시간을 초기화하시겠습니까?";
-    if(Platform.OS === 'web'){
-      if(window.confirm(message)){
-        reset();
-      }
-    }else{
-      Alert.alert("초기화", message, [
-        {text: "취소", style: "cancel"},
-        {text: "확인", onPress: reset}
-      ])
-    }
-  };
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){
@@ -323,40 +310,13 @@ export default function StopwatchScreen() {
               <Text style={styles.timerText}>{formatTime(time)}</Text>
 
               {/* 스톱워치 버튼 영역 */}
-              <View style={styles.buttonRow}>
-                <Button
-                  mode="contained"
-                  onPress={isRunning ? pause : start}
-                  style={styles.fullBtn}
-                  labelStyle={styles.btnLabel}
-                  icon={isRunning ? "pause" : "play"}
-                  buttonColor={isRunning ? "#ff4d4d" : "#4caf50"}
-                >
-                  {isRunning ? "일시정지" : "시작"}
-                </Button>
-
-                <Button
-                  mode="contained"
-                  onPress={handleReset}
-                  style={[styles.fullBtn, styles.resetBtn]}
-                  labelStyle={styles.btnLabel}
-                  icon="refresh"
-                >
-                  초기화
-                </Button>
-
-                <Button
-                  mode="contained"
-                  onPress={handleComplete}
-                  style={styles.fullBtn}
-                  labelStyle={styles.btnLabel}
-                  icon="check-bold"
-                  disabled={!isRunning}
-                  buttonColor={isRunning ? '#2196f3' : '#b0bec5'}
-                >
-                  완료
-                </Button>
-              </View>
+              <StopwatchButtons 
+                isRunning={isRunning}
+                start={start}
+                pause={pause}
+                reset={reset}
+                handleComplete={handleComplete}
+              />
             </Card.Content>
           </Card>
 
