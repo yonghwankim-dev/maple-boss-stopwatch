@@ -1,5 +1,5 @@
-import { StyleSheet } from "react-native";
 import { Button } from "react-native-paper";
+import { stopwatchButtonStyle } from "../styles/stopwatchButtonStyle";
 
 
 interface StopwatchStartButtonProps{
@@ -23,12 +23,13 @@ export default function StopwatchStartButton({
         buttonColor = "#ff4d4d";
         buttonTitle = "일시정지"
     }
+    
     return (
         <Button
             mode="contained"
             onPress={onPress}
-            style={styles.fullBtn}
-            labelStyle={styles.btnLabel}
+            style={stopwatchButtonStyle.fullBtn}
+            labelStyle={stopwatchButtonStyle.btnLabel}
             icon={icon}
             buttonColor={buttonColor}
         >
@@ -36,17 +37,3 @@ export default function StopwatchStartButton({
         </Button>
     );
 }
-
-const styles = StyleSheet.create({
-    fullBtn: {
-        flex: 1,
-        borderRadius: 0,
-        height: 52,
-        justifyContent: 'center'
-    },
-    btnLabel: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        marginVertical: 0
-    }
-});

@@ -1,5 +1,6 @@
-import { Alert, Platform, StyleSheet } from "react-native";
+import { Alert, Platform } from "react-native";
 import { Button } from "react-native-paper";
+import { stopwatchButtonStyle } from "../styles/stopwatchButtonStyle";
 
 
 interface StopwatchResetButtonProps{
@@ -28,28 +29,11 @@ export default function StopwatchResetButton({
         <Button
             mode="contained"
             onPress={handleReset}
-            style={[styles.fullBtn, styles.resetBtn]}
-            labelStyle={styles.btnLabel}
+            style={[stopwatchButtonStyle.fullBtn, stopwatchButtonStyle.resetBtn]}
+            labelStyle={stopwatchButtonStyle.btnLabel}
             icon="refresh"
         >
             초기화
         </Button>
     );
 }
-
-const styles = StyleSheet.create({
-    fullBtn: {
-        flex: 1,
-        borderRadius: 0,
-        height: 52,
-        justifyContent: 'center'
-    },
-    resetBtn: {
-        backgroundColor: '#424242'
-    },
-    btnLabel: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        marginVertical: 0
-    }
-})
