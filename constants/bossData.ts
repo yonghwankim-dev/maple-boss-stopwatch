@@ -14,6 +14,6 @@ export const BOSS_DATA: Record<string, string[]> = {
   "카링": ["Easy", "Normal", "Hard", "Extreme"],
   "찬란한 흉성": ["Normal", "Hard"],
   "림보": ["Normal", "Hard"],
-  "발드릭스": ["Normal", "Hard"],
+  "발드릭스": ["Normal", "Hard"], 
   "유피테르": ["Normal", "Hard"]
 };
