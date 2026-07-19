@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const useStopwatch = ()=>{
     const [time, setTime] = useState<number>(0); // 초단위
@@ -59,6 +59,14 @@ export const useStopwatch = ()=>{
         reset();
         return finalTime;
     };
+
+    useEffect(()=>{
+        return ()=>{
+            if(timeRef.current){
+                clearInterval(timeRef.current);
+            }
+        }
+    }, []);
 
     return {time, isRunning, start, pause, reset, complete};
 };
