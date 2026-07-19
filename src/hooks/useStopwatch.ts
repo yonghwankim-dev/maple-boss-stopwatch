@@ -55,7 +55,8 @@ export const useStopwatch = ()=>{
     // 완료 기능
     const complete = ()=>{
         const finalTime = isRunning ?
-            Math.floor((Date.now() - startTimeRef.current) / 1000) : time;
+            Math.floor((Date.now() - startTimeRef.current) / 1000) : 
+            Math.floor(accumulatedTimeRef.current / 1000);
         reset();
         return finalTime;
     };
