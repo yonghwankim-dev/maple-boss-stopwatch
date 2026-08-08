@@ -22,8 +22,6 @@ export const BOSS_ORDER = Object.keys(BOSS_DATA);
 
 export const getBossSortRank = (bossName: string, difficulty: string)=>{
   const bossIndex = BOSS_ORDER.indexOf(bossName);
-  // 찾고자 하는 보스가 없는 경우 bossIndex=-1이된다.
-  // 그럼 해당 보스의 순서는 제일 뒤가 된다.
   const validBossIndex = bossIndex !== -1 ? bossIndex : 999;
   
   const difficultyList = BOSS_DATA[bossName] || [];
