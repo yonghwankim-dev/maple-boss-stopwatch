@@ -17,3 +17,21 @@ export const BOSS_DATA: Record<string, string[]> = {
   "발드릭스": ["Normal", "Hard"], 
   "유피테르": ["Normal", "Hard"]
 };
+
+export const BOSS_ORDER = Object.keys(BOSS_DATA);
+
+export const getBossSortRank = (bossName: string, difficulty: string)=>{
+  const bossIndex = BOSS_ORDER.indexOf(bossName);
+  // 찾고자 하는 보스가 없는 경우 bossIndex=-1이된다.
+  // 그럼 해당 보스의 순서는 제일 뒤가 된다.
+  const validBossIndex = bossIndex !== -1 ? bossIndex : 999;
+  
+  const difficultyList = BOSS_DATA[bossName] || [];
+  const difficultyIndex = difficultyList.indexOf(difficulty);
+  const validDifficultyIndex = difficultyIndex !== -1 ? difficultyIndex : 999;
+
+  return {
+    bossIndex: validBossIndex,
+    difficultyIndex: validDifficultyIndex
+  };
+}

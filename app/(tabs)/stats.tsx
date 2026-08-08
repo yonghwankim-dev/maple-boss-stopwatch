@@ -1,4 +1,4 @@
-import { BOSS_DATA } from "@/constants/bossData";
+import { BOSS_DATA, getBossSortRank } from "@/constants/bossData";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useState } from "react";
@@ -108,7 +108,7 @@ export default function StatsScreen(){
     const bestRecords = useMemo(()=>{
         const filtered = persistentRecords.filter(r => r.characterName === selectedCharName);
         type RecordType = typeof persistentRecords[number];
-        // key: 보스이름, value: 클리어시간(초단위)
+        // key: 보스이름, value: 보스 기록 데이터 객체
         const bossMap: {[key: string]: RecordType} = {};
 
         filtered.forEach(r=>{
@@ -122,9 +122,18 @@ export default function StatsScreen(){
 
         return Object.entries(bossMap).map(([bossDisplayName, record]) => ({
             bossDisplayName,
-            clearTimeSec: record.clearTimeSec,
             record
-        }));
+        }))
+        .sort((a,b)=>{
+            const rankA = getBossSortRank(a.record.bossName, a.record.difficulty);
+            const rankB = getBossSortRank(b.record.bossName, b.record.difficulty);
+            // 1. 보스 순서가 다르면 보스 순서대로 정렬
+            if(rankA.bossIndex !== rankB.bossIndex){
+                return rankA.bossIndex - rankB.bossIndex;
+            }
+            // 2. 보스가 같다면 난이도 순서대로 정렬(예: Easy -> Normal -> Hard -> Extream)
+            return rankA.difficultyIndex - rankB.difficultyIndex;
+        });
     }, [persistentRecords, selectedCharName]);
 
     // 차트 데이터 및 Y축 5분 단위 계산 로직
@@ -362,7 +371,7 @@ export default function StatsScreen(){
                                             style={styles.listItem}
                                         />
                                         <View style={styles.recordContainer}>
-                                            <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
+                                            <Text style={styles.bestTime}>{formatTime(item.record.clearTimeSec)}</Text>
                                             <Text style={styles.bestCreatedAt}>{item.record.createdAt}</Text>
                                         </View>
                                         
