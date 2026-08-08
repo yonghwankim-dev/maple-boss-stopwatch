@@ -509,23 +509,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8
   },
-  // 데이터 포인트 레이블 스타일
-  pointLabelContainer: {
-    position: 'absolute',
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingVertical: 1,
-    paddingHorizontal: 2,
-    borderRadius: 4
-  },
-  pointLabelText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1976d2'
-  },
-
   // 최고 기록 열 레이아웃
   bestRow: {
     flexDirection: 'row',
