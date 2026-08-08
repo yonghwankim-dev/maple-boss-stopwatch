@@ -17,7 +17,10 @@ jobs:
         env:
           PULL_REQUEST_HEAD_REF: "${{ github.event.pull_request.head.ref }}"
           PULL_REQUEST_BASE_REF: "${{ github.event.pull_request.base.ref }}"
-        run: |-
+        run: |
+          # Lock 파일, 빌드 결과물, 이미지 등 리뷰에 불필요한 대용량 파일은 diff에서 제외
+          git diff "origin/${{ github.event.pull_request.base.ref }}"..."origin/${{ github.event.pull_request.head.ref }}" \
+            -- . ':(exclude)package-lock.json' ':(exclude)yarn.lock' ':(exclude)pnpm-lock.yaml' ':(exclude)*.png' ':(exclude)*.jpg' > diff.txt
           git fetch origin "${{ env.PULL_REQUEST_HEAD_REF }}"
           git fetch origin "${{ env.PULL_REQUEST_BASE_REF }}"
           git checkout "${{ env.PULL_REQUEST_HEAD_REF }}"
