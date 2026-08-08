@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Surface, Text } from "react-native-paper";
+import { G as SvgG, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 
 if(Platform.OS === 'web' && typeof window !== 'undefined'){
     const iconsole = window.console;
@@ -304,6 +305,36 @@ export default function StatsScreen(){
                                 }}
                                 bezier // 곡선효과 적용
                                 style={styles.chartRadius}
+                                renderDotContent={({x, y, index, indexData})=>{
+                                    const record = filteredRecords[index];
+                                    if(!record || indexData === 30 && index >= filteredRecords.length){
+                                        return null;
+                                    }
+                                    const timeText = formatTime(record.clearTimeSec);
+                                    return (
+                                        <SvgG key={`dot-label-${index}`}>
+                                            <SvgRect
+                                                x = {x - 20}
+                                                y = {y - 25}
+                                                width={40}
+                                                height={16}
+                                                fill="rgba(255, 255, 255, 0.9)"
+                                                rx={4}
+                                            />
+                                            <SvgText
+                                                x={x}
+                                                y={y - 13}
+                                                fill="#1976d2"
+                                                fontSize="10"
+                                                fontWeight="bold"
+                                                textAnchor="middle"
+                                            >
+                                                {timeText}
+                                            </SvgText>
+                                        </SvgG>
+                                    );
+                                    
+                                }}
                                 onDataPointClick={()=>{}}
                             />
                         ) : (
