@@ -107,21 +107,23 @@ export default function StatsScreen(){
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
         const filtered = persistentRecords.filter(r => r.characterName === selectedCharName);
+        type RecordType = typeof persistentRecords[number];
         // key: 보스이름, value: 클리어시간(초단위)
-        const bossMap: {[key: string]: number} = {};
+        const bossMap: {[key: string]: RecordType} = {};
 
         filtered.forEach(r=>{
             // 리스트 식별 명칭에 난이도를 함께 결합 (예: '스우 (Hard)')
             const displayName = `${r.bossName} (${r.difficulty})`
 
-            if(!bossMap[displayName] || r.clearTimeSec < bossMap[displayName]){
-                bossMap[displayName] = r.clearTimeSec;
+            if(!bossMap[displayName] || r.clearTimeSec < bossMap[displayName].clearTimeSec){
+                bossMap[displayName] = r;
             }
         });
 
-        return Object.entries(bossMap).map(([bossDisplayName, clearTimeSec]) => ({
+        return Object.entries(bossMap).map(([bossDisplayName, record]) => ({
             bossDisplayName,
-            clearTimeSec
+            clearTimeSec: record.clearTimeSec,
+            record
         }));
     }, [persistentRecords, selectedCharName]);
 
@@ -359,7 +361,11 @@ export default function StatsScreen(){
                                             titleStyle={styles.bossTitle}
                                             style={styles.listItem}
                                         />
-                                        <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
+                                        <View style={styles.recordContainer}>
+                                            <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
+                                            <Text style={styles.bestCreatedAt}>{item.record.createdAt}</Text>
+                                        </View>
+                                        
                                     </View>
                                     {index < bestRecords.length - 1 && <Divider/>}
                                 </React.Fragment>
@@ -524,13 +530,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold'
   },
+  recordContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center'
+  },
   bestTime: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#4caf50',
+    color: '#2196f3',
     marginRight: 16
   },
-
+  bestCreatedAt: {
+    fontSize: 11,
+    color: '#8e8e93',
+    marginTop: 2,
+    fontWeight: '400'
+  },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 30,
