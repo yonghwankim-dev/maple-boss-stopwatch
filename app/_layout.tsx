@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { BossProvider } from '@/src/context/BossContext';
 import { CharacterProvider } from '@/src/context/CharacterContext';
 
 export {
@@ -41,9 +42,11 @@ export default function RootLayout() {
   }
 
   return (
-    <CharacterProvider>
-      <RootLayoutNav />
-    </CharacterProvider>
+    <BossProvider>
+      <CharacterProvider>
+        <RootLayoutNav />
+      </CharacterProvider>
+    </BossProvider>
   );
 }
 

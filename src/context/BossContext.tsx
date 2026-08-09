@@ -2,18 +2,18 @@ import { BOSS_DATA } from "@/constants/bossData";
 import { createContext, ReactNode, useContext, useState } from "react";
 
 interface BossContextType{
-    selectedBossName: string | null;
-    setSelectedBossName: React.Dispatch<React.SetStateAction<string | null>>;
-    selectedBossDifficulty: string | null;
-    setSelectedDifficulty: React.Dispatch<React.SetStateAction<string | null>>;
+    selectedBossName: string;
+    setSelectedBossName: React.Dispatch<React.SetStateAction<string>>;
+    selectedBossDifficulty: string;
+    setSelectedDifficulty: React.Dispatch<React.SetStateAction<string>>;
 
 }
 
 const BossContext = createContext<BossContextType | undefined>(undefined);
 
 export function BossProvider({children} : {children: ReactNode}){
-    const [selectedBossName, setSelectedBossName] = useState<string | null>('스우');
-    const [selectedBossDifficulty, setSelectedDifficulty] = useState<string | null>(BOSS_DATA['스우'][0]);
+    const [selectedBossName, setSelectedBossName] = useState<string>('스우');
+    const [selectedBossDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA['스우'][0]);
 
     return (
         <BossContext.Provider

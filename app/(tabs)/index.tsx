@@ -5,6 +5,7 @@ import { BossSelectorCard } from '@/components/BossSelectorCard';
 import { View } from '@/components/Themed';
 import { BOSS_DATA } from '@/constants/bossData';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
+import { useBoss } from '@/src/context/BossContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
@@ -16,8 +17,9 @@ export default function StopwatchScreen() {
   const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent, bossDifficultyMap, updateBossDifficulty } = useCharacter();
     
   // 보스 및 난이도 상태 관리
-  const [bossName, setBossName] = useState<string>("스우");
-  const [difficulty, setDifficulty] = useState<string>(BOSS_DATA["스우"][0]);
+  const {selectedBossName, setSelectedBossName, selectedBossDifficulty, setSelectedDifficulty } = useBoss();
+  // const [bossName, setBossName] = useState<string>("스우");
+  // const [difficulty, setDifficulty] = useState<string>(BOSS_DATA["스우"][0]);
 
   // UI 메뉴 오픈 여부 제어 상태
   const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
@@ -31,29 +33,29 @@ export default function StopwatchScreen() {
   const [manualDate, setManualDate] = useState<string>(getTodayDate());
   
   useEffect(()=>{
-    if(bossDifficultyMap[bossName]){
-      setDifficulty(bossDifficultyMap[bossName]);
-    }else if(BOSS_DATA[bossName]){
-      setDifficulty(BOSS_DATA[bossName][0]);
+    if(bossDifficultyMap[selectedBossName]){
+      setSelectedDifficulty(bossDifficultyMap[selectedBossName]);
+    }else if(BOSS_DATA[selectedBossName]){
+      setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
     }
-  },[bossName, bossDifficultyMap]);
+  },[selectedBossName, bossDifficultyMap]);
 
   // 보스 변경 핸들러
   const handleBossChange = (selectedBoss: string) => {
-    setBossName(selectedBoss);
+    setSelectedBossName(selectedBoss);
     // 이전에 이 보스에서 선택했던 난이도가 있다면 불러오고, 없으면 첫 난이도로 지정
     const memorizeDifficulty = bossDifficultyMap[selectedBoss];
     if(memorizeDifficulty && BOSS_DATA[selectedBoss].includes(memorizeDifficulty)){
-      setDifficulty(memorizeDifficulty);
+      setSelectedDifficulty(memorizeDifficulty);
     }else{
-      setDifficulty(BOSS_DATA[selectedBoss][0]);
+      setSelectedDifficulty(BOSS_DATA[selectedBoss][0]);
     }
   };
 
   // 보스 난이도 변경 핸들러
   const handleBossDifficultyChange = async (selectedDifficulty: string)=>{
-    setDifficulty(selectedDifficulty);
-    await updateBossDifficulty(bossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
+    setSelectedDifficulty(selectedDifficulty);
+    await updateBossDifficulty(selectedBossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
   }
 
   const handleComplete = async ()=>{
@@ -71,8 +73,8 @@ export default function StopwatchScreen() {
     const newRecord: BossRecord = {
       id: Math.random().toString(36).substring(2, 9),
       characterName: selectedCharacter.name,
-      bossName: bossName,
-      difficulty: difficulty,
+      bossName: selectedBossName,
+      difficulty: selectedBossDifficulty,
       clearTime: formatTime(elapsedSeconds),
       clearTimeSec: elapsedSeconds,
       // 출력 형식: YYYY-MM-DD
@@ -135,8 +137,8 @@ export default function StopwatchScreen() {
     const newRecord: BossRecord = {
       id: Math.random().toString(36).substring(2, 9),
       characterName: selectedCharacter.name,
-      bossName: bossName,
-      difficulty: difficulty,
+      bossName: selectedBossName,
+      difficulty: selectedBossDifficulty,
       clearTime: formatTime(totalSeconds),
       clearTimeSec: totalSeconds,
       createdAt: manualDate
@@ -157,22 +159,22 @@ export default function StopwatchScreen() {
 
   // 현재 보스 선택 판단 여부
   const isSelectedBoss = (boss: string)=>{
-    return boss === bossName;
+    return boss === selectedBossName;
   }
 
   // 현재 보스 난이도 판단 여부
   const isSelectedBossDifficulty = (diff: string)=>{
-    return diff === difficulty;
+    return diff === selectedBossDifficulty;
   }
 
   // 현재 선택된 보스의 난이도 리스르를 반환
   const getCurrentSelectedBossDifficulties = ()=>{
-    return BOSS_DATA[bossName];
+    return BOSS_DATA[selectedBossName];
   }
 
   // 현재 선택된 보스의 보스 이름과 난이도를 포맷팅해서 반환
   const formatCurrentBossTarget = ()=>{
-    return `${bossName} (${difficulty})`;
+    return `${selectedBossName} (${selectedBossDifficulty})`;
   }
 
   return (
