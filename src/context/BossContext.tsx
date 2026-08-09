@@ -12,8 +12,10 @@ interface BossContextType{
 const BossContext = createContext<BossContextType | undefined>(undefined);
 
 export function BossProvider({children} : {children: ReactNode}){
-    const [selectedBossName, setSelectedBossName] = useState<string>('스우');
-    const [selectedBossDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA['스우'][0]);
+    const firstBossName = Object.keys(BOSS_DATA)[0];
+    const firstBossDfficulties = BOSS_DATA[firstBossName];
+    const [selectedBossName, setSelectedBossName] = useState<string>(firstBossName);
+    const [selectedBossDifficulty, setSelectedDifficulty] = useState<string>(firstBossDfficulties[0]);
 
     return (
         <BossContext.Provider
