@@ -5,19 +5,23 @@ import { Card, Divider, Surface, Text } from "react-native-paper";
 import { View } from "./Themed";
 
 interface BossSelectorCardProps{
-    bossName: string;
-    difficulty: string;
     selectedCharacter: Character | null;
     handleBossChange: (boss: string) => void;
     handleBossDifficultyChange: (difficulty: string) => void;
+    isSelectedBoss: (boss: string) => boolean;
+    isSelectedBossDifficulty: (diff: string) => boolean;
+    getCurrentSelectedBossDifficulties: () => string[];
+    formatCurrentBossTarget: () => string;
 }
 
 export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
-    bossName,
-    difficulty,
     selectedCharacter,
     handleBossChange,
-    handleBossDifficultyChange
+    handleBossDifficultyChange,
+    isSelectedBoss,
+    isSelectedBossDifficulty,
+    getCurrentSelectedBossDifficulties,
+    formatCurrentBossTarget
 }) => {
     return (
         <Card style={styles.card}>
@@ -29,7 +33,7 @@ export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
 
               <View style={styles.bossGridContainer}>
                 {Object.keys(BOSS_DATA).map((boss)=>{
-                  const isSelected = boss === bossName;
+                  const isSelected = isSelectedBoss(boss);
                   return (
                     <Pressable
                       key={boss}
@@ -66,8 +70,8 @@ export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.chipRow}
               >
-                {BOSS_DATA[bossName].map(diff => {
-                  const isSelected = diff === difficulty;
+                {getCurrentSelectedBossDifficulties().map(diff => {
+                  const isSelected = isSelectedBossDifficulty(diff);
                   return (
                     <Pressable
                       key={diff}
@@ -104,7 +108,7 @@ export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
             <Text style={styles.infoText}>
               타겟: <Text style={styles.boldChar}>
                 {selectedCharacter ? selectedCharacter.name : '미선택'}
-                </Text> ➡️ <Text style={styles.boldBoss}>{bossName} ({difficulty})</Text>
+                </Text> ➡️ <Text style={styles.boldBoss}>{formatCurrentBossTarget()}</Text>
             </Text>
           </Card.Content>
 

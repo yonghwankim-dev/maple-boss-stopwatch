@@ -155,6 +155,26 @@ export default function StopwatchScreen() {
     setTempRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
   }
 
+  // 현재 보스 선택 판단 여부
+  const isSelectedBoss = (boss: string)=>{
+    return boss === bossName;
+  }
+
+  // 현재 보스 난이도 판단 여부
+  const isSelectedBossDifficulty = (diff: string)=>{
+    return diff === difficulty;
+  }
+
+  // 현재 선택된 보스의 난이도 리스르를 반환
+  const getCurrentSelectedBossDifficulties = ()=>{
+    return BOSS_DATA[bossName];
+  }
+
+  // 현재 선택된 보스의 보스 이름과 난이도를 포맷팅해서 반환
+  const formatCurrentBossTarget = ()=>{
+    return `${bossName} (${difficulty})`;
+  }
+
   return (
     <Provider>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -193,11 +213,13 @@ export default function StopwatchScreen() {
 
         {/* 보스 및 난이도 설정 카드 */}
         <BossSelectorCard
-          bossName={bossName}
-          difficulty={difficulty}
           selectedCharacter={selectedCharacter}
           handleBossChange={handleBossChange}
           handleBossDifficultyChange={handleBossDifficultyChange}
+          isSelectedBoss={isSelectedBoss}
+          isSelectedBossDifficulty={isSelectedBossDifficulty}
+          getCurrentSelectedBossDifficulties={getCurrentSelectedBossDifficulties}
+          formatCurrentBossTarget={formatCurrentBossTarget}
         />
         
         {/* 기록 모드 전환 탭 */}
