@@ -12,6 +12,7 @@ interface CharacterContextType{
     /* 보스 클리어 기록 데이터 */
     tempRecords: BossRecord[]; // 스톱워치 화면 전용 임시 데이터
     setTempRecords: React.Dispatch<React.SetStateAction<BossRecord[]>>;
+    
     /* 보스 클리어 기록 데이터 관리 기능 */
     persistentRecords: BossRecord[]; // 통계 및 히스토리 전용 영속적 데이터
     saveToPersistent: (record: BossRecord) => Promise<void>;
@@ -220,6 +221,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     };
 
+    // 보스 기록 가져오기
     const importPersistentRecords = async (incomingRecords: BossRecord[])=>{
         try{
             // 데이터 무결성 검증 (배열 형태 확인)

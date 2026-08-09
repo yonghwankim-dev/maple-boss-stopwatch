@@ -54,7 +54,6 @@ export default function StatsScreen(){
     const [selectedBossName, setSelectedBossName] = useState<string>(bossKeys[0]);
     const [selectedDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA[bossKeys[0]][0]);
     
-
     useEffect(()=>{
         // 등록된 캐릭터가 로드되었을때 초기 선택 캐릭터명 동기화
         if(characters.length > 0 && !selectedCharName){
