@@ -18,8 +18,6 @@ export default function StopwatchScreen() {
     
   // 보스 및 난이도 상태 관리
   const {selectedBossName, setSelectedBossName, selectedBossDifficulty, setSelectedDifficulty } = useBoss();
-  // const [bossName, setBossName] = useState<string>("스우");
-  // const [difficulty, setDifficulty] = useState<string>(BOSS_DATA["스우"][0]);
 
   // UI 메뉴 오픈 여부 제어 상태
   const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
