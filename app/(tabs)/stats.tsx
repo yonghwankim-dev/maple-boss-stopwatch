@@ -208,9 +208,9 @@ export default function StatsScreen(){
                     isSelectedBossDifficulty={isSelectedBossDifficulty}
                     getCurrentSelectedBossDifficulties={getCurrentSelectedBossDifficulties}
                     formatCurrentBossTarget={formatCurrentBossTarget}
+                    subtitle="통계를 확인할 보스 및 난이도를 선택하세요."
                 />
                 
-
                 {/* 꺽은선 추이 그래프 세션 */}
                 <Card style={styles.card}>
                     <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedBossDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>

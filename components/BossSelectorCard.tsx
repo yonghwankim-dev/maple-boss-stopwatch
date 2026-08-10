@@ -12,6 +12,8 @@ interface BossSelectorCardProps{
     isSelectedBossDifficulty: (diff: string) => boolean;
     getCurrentSelectedBossDifficulties: () => string[];
     formatCurrentBossTarget: () => string;
+    title?: string;
+    subtitle?: string;
 }
 
 export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
@@ -21,11 +23,13 @@ export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
     isSelectedBoss,
     isSelectedBossDifficulty,
     getCurrentSelectedBossDifficulties,
-    formatCurrentBossTarget
+    formatCurrentBossTarget,
+    title = "보스 및 난이도 설정",
+    subtitle = "기록을 측정할 보스 및 난이도를 선택하세요."
 }) => {
     return (
         <Card style={styles.card}>
-          <Card.Title title="보스 및 난이도 설정" subtitle="기록을 측정할 보스 및 난이도를 선택하세요."/>
+          <Card.Title title={title} subtitle={subtitle}/>
           <Card.Content style={{gap: 16}}>
             {/* 6열 바둑판 그리드 형태의 보스 즉시 선택 구역 */}
             <View style={styles.dropdownWrapper}>
