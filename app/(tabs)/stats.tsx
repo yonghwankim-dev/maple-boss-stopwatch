@@ -1,4 +1,5 @@
 import { BOSS_DATA, getBossSortRank } from "@/constants/bossData";
+import { useBoss } from "@/src/context/BossContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useState } from "react";
@@ -42,17 +43,16 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, persistentRecords, bossDifficultyMap, updateBossDifficulty} = useCharacter();
+    const {characters, persistentRecords} = useCharacter();
     const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
     
+    const {selectedBossName, selectedBossDifficulty, handleBossChange, handleBossDifficultyChange} = useBoss();
     
     // 보스 목록 리스트
     const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
 
     // 통계를 볼 캐릭터 필터링 상태 정의 (기본값: 첫번째 캐릭터)
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
-    const [selectedBossName, setSelectedBossName] = useState<string>(bossKeys[0]);
-    const [selectedDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA[bossKeys[0]][0]);
     
     useEffect(()=>{
         // 등록된 캐릭터가 로드되었을때 초기 선택 캐릭터명 동기화
@@ -61,24 +61,12 @@ export default function StatsScreen(){
         }
     },[characters]);
 
-    // 선택된 보스나 메모라이즈 맵이 로드/변경될때마다 난이도 매칭 제어
-    useEffect(()=>{
-        if(BOSS_DATA[selectedBossName]){
-            const memorizedDifficulty = bossDifficultyMap[selectedBossName];
-            if(memorizedDifficulty && BOSS_DATA[selectedBossName].includes(memorizedDifficulty)){
-                setSelectedDifficulty(memorizedDifficulty);
-            }else{
-                setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
-            }        
-        }
-    }, [selectedBossName, bossDifficultyMap]);
-    
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
         const filtered = persistentRecords.filter(r => 
             r.characterName === selectedCharName &&
             r.bossName === selectedBossName &&
-            r.difficulty === selectedDifficulty
+            r.difficulty === selectedBossDifficulty
         );
 
         // 일자별 가장 빠른 기록을 담을 임시 맵 객체 선언
@@ -101,7 +89,7 @@ export default function StatsScreen(){
         return Object.values(dailyBestMap)
             .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
             .slice(-5); // 최근 5개만
-    }, [persistentRecords, selectedCharName, selectedBossName, selectedDifficulty]);
+    }, [persistentRecords, selectedCharName, selectedBossName, selectedBossDifficulty]);
 
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
@@ -167,29 +155,6 @@ export default function StatsScreen(){
         };
 
     }, [filteredRecords]);
-
-    // 보스 변경 핸들러
-    const handleBossChange = (boss: string)=>{
-        // selectedBossName 상태 변경
-        setSelectedBossName(boss);
-        // 보스 메뉴 닫기
-        setBossMenuVisible(false);
-        // 이전에 선택한 보스 난이도를 현재 선택된 보스 난이도에 적용하기
-        const memorizedDifficulty = bossDifficultyMap[boss];
-        if(memorizedDifficulty && BOSS_DATA[boss].includes(memorizedDifficulty)){
-            setSelectedDifficulty(memorizedDifficulty);
-        }else{
-            setSelectedDifficulty(BOSS_DATA[boss][0]);
-        }
-    }
-
-    const handleBossDifficultyChange = async (difficulty: string)=>{
-        // 선택된 난이도 변경
-        setSelectedDifficulty(difficulty);
-        
-        // 저장소에 난이도 값 업데이트
-        await updateBossDifficulty(selectedBossName, difficulty);
-    };
 
     const screenWidth = Dimensions.get("window").width;
     const chartWidth = Math.min(screenWidth - 64, 540); // 반응형 너비 대응
@@ -264,7 +229,7 @@ export default function StatsScreen(){
                             <Text style={styles.filterLabel}>난이도</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                                 {BOSS_DATA[selectedBossName]?.map(diff=>{
-                                    const isSelected = diff === selectedDifficulty;
+                                    const isSelected = diff === selectedBossDifficulty;
                                     return (
                                         <Pressable
                                             key={diff}
@@ -292,7 +257,7 @@ export default function StatsScreen(){
 
                 {/* 꺽은선 추이 그래프 세션 */}
                 <Card style={styles.card}>
-                    <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
+                    <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedBossDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
                     <Card.Content style={styles.chartCenter}>
                         {chartConfigValues ? (
                             <LineChart
