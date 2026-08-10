@@ -4,28 +4,27 @@ import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, persistentRecords, deleteFromPersistent, importPersistentRecords} = useCharacter();
-    const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
+    const {characters, selectedCharacter, setSelectedCharacter, persistentRecords, deleteFromPersistent, importPersistentRecords} = useCharacter();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
-
-    useEffect(() => {
-        // 현재 선택된 캐릭터명이 비어있고, 불러온 캐릭터 목록에 데이터가 존재할 때
-        if (!selectedCharName && characters.length > 0) {
-            setSelectedCharName(characters[0].name);
-        }
-    }, [characters, selectedCharName]);
 
     // 숨겨진 HTML file input에 접근하기 위한 ref 선언
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+    useEffect(() => {
+        // 현재 선택된 캐릭터명이 비어있고, 불러온 캐릭터 목록에 데이터가 존재할 때
+        if (!selectedCharacter && characters.length > 0) {
+            setSelectedCharacter(characters[0]);
+        }
+    }, [characters, selectedCharacter]);
+
     const filteredRecords = useMemo(()=>{
-        if(!selectedCharName){
+        if(!selectedCharacter){
             return [];
         }
         return persistentRecords
-            .filter((record)=>record.characterName === selectedCharName)
+            .filter((record)=>record.characterName === selectedCharacter.name)
             .sort((a,b)=>new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [persistentRecords, selectedCharName]);
+    }, [persistentRecords, selectedCharacter]);
 
     const handleDeleteRecord = async (id: string)=>{
         await deleteFromPersistent(id);
@@ -87,9 +86,11 @@ export default function CharacterHistoryScreen(){
                 if(result.success){
                     alert(`성공적으로 데이터를 가져왔습니다!\n총 ${result.count}개의 기록이 병합/업데이트 되었습니다.`);
 
+                    // todo: 사용자 컨텍스트의 chracters 및 보스 기록 상태 동기화
+
                     // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
-                    if(characters.length > 0 && !selectedCharName){
-                        setSelectedCharName(characters[0].name);
+                    if(characters.length > 0 && !selectedCharacter){
+                        setSelectedCharacter(characters[0]);
                     }
                 }else{
                     alert(`가져오기 실패: ${result.error}`);
@@ -174,14 +175,14 @@ export default function CharacterHistoryScreen(){
                                 style={styles.pickerBtn}
                                 contentStyle={styles.pickerBtnContent}
                             >
-                                {selectedCharName ? `${selectedCharName}` : '캐릭터 선택하기'}
+                                {selectedCharacter ? `${selectedCharacter.name}` : '캐릭터 선택하기'}
                             </Button>
                             } 
                         >
                             {characters.map((char)=>(
                                 <Menu.Item
                                     key={char.id}
-                                    onPress={()=>{setSelectedCharName(char.name); setCharMenuVisible(false);}}
+                                    onPress={()=>{setSelectedCharacter(char); setCharMenuVisible(false);}}
                                     title={char.name}                    
                                 />
                             ))}
@@ -195,7 +196,7 @@ export default function CharacterHistoryScreen(){
                 {/* 보스 클리어 리스트 출력 구역 */}
                 <Card style={styles.card}>
                     <Card.Title
-                        title={selectedCharName ? `[${selectedCharName}] 보스 클리어 기록` : '보스 클리어 기록'}
+                        title={selectedCharacter ? `[${selectedCharacter.name}] 보스 클리어 기록` : '보스 클리어 기록'}
                         subtitle={`총 ${filteredRecords.length}개의 기록이 있습니다.`}
                     />
                     <Card.Content style={{paddingHorizontal: 0}}>
@@ -226,7 +227,7 @@ export default function CharacterHistoryScreen(){
                         {filteredRecords.length === 0 && (
                             <View style={styles.emptyContainer}>
                                 <Text style={styles.emptyText}>
-                                    {selectedCharName ? "해당 캐릭터로 등록된 보스 클리어 기록이 없습니다." : "조회할 캐릭터를 상단에서 먼저 선택해 주세요."}
+                                    {selectedCharacter ? "해당 캐릭터로 등록된 보스 클리어 기록이 없습니다." : "조회할 캐릭터를 상단에서 먼저 선택해 주세요."}
                                 </Text>
                             </View>
                         )}
