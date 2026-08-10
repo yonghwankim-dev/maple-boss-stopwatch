@@ -1,5 +1,5 @@
 import { BossSelectorCard } from "@/components/BossSelectorCard";
-import { BOSS_DATA, getBossSortRank } from "@/constants/bossData";
+import { getBossSortRank } from "@/constants/bossData";
 import { useBoss } from "@/src/context/BossContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
@@ -44,9 +44,8 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, persistentRecords, selectedCharacter} = useCharacter();
-    const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
-    
+    const {characters, persistentRecords} = useCharacter();
+
     const {
         selectedBossName, 
         selectedBossDifficulty, 
@@ -58,9 +57,6 @@ export default function StatsScreen(){
         formatCurrentBossTarget
     } = useBoss();
     
-    // 보스 목록 리스트
-    const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
-
     // 통계를 볼 캐릭터 필터링 상태 정의 (기본값: 첫번째 캐릭터)
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
     
@@ -201,7 +197,6 @@ export default function StatsScreen(){
 
                 {/* 보스 및 난이도 선택 필터 세션 */}
                 <BossSelectorCard
-                    selectedCharacter={selectedCharacter}
                     handleBossChange={handleBossChange}
                     handleBossDifficultyChange={handleBossDifficultyChange}
                     isSelectedBoss={isSelectedBoss}

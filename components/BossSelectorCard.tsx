@@ -1,11 +1,9 @@
 import { BOSS_DATA } from "@/constants/bossData";
-import { Character } from "@/src/types/boss";
 import { Pressable, ScrollView, StyleSheet } from "react-native";
-import { Card, Divider, Surface, Text } from "react-native-paper";
+import { Card, Surface, Text } from "react-native-paper";
 import { View } from "./Themed";
 
 interface BossSelectorCardProps{
-    selectedCharacter: Character | null;
     handleBossChange: (boss: string) => void;
     handleBossDifficultyChange: (difficulty: string) => void;
     isSelectedBoss: (boss: string) => boolean;
@@ -17,7 +15,6 @@ interface BossSelectorCardProps{
 }
 
 export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
-    selectedCharacter,
     handleBossChange,
     handleBossDifficultyChange,
     isSelectedBoss,
@@ -106,14 +103,6 @@ export const BossSelectorCard: React.FC<BossSelectorCardProps> = ({
 
               </ScrollView>
             </View>
-            <Divider/>
-
-            {/* 선택한 캐릭터 / 보스 / 난이도 출력 */}
-            <Text style={styles.infoText}>
-              타겟: <Text style={styles.boldChar}>
-                {selectedCharacter ? selectedCharacter.name : '미선택'}
-                </Text> ➡️ <Text style={styles.boldBoss}>{formatCurrentBossTarget()}</Text>
-            </Text>
           </Card.Content>
 
         </Card>

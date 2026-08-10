@@ -176,7 +176,6 @@ export default function StopwatchScreen() {
 
         {/* 보스 및 난이도 설정 카드 */}
         <BossSelectorCard
-          selectedCharacter={selectedCharacter}
           handleBossChange={handleBossChange}
           handleBossDifficultyChange={handleBossDifficultyChange}
           isSelectedBoss={isSelectedBoss}
