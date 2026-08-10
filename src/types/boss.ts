@@ -12,3 +12,10 @@ export interface Character{
     id: string,
     name: string
 }
+
+export interface ExportedData{
+  version: string;
+  exportedAt: string;
+  characters: Character[];
+  persistentRecords: BossRecord[];
+}

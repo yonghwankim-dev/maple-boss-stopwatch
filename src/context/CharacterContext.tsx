@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { BossRecord, Character } from "../types/boss";
+import { BossRecord, Character, ExportedData } from "../types/boss";
 
 
 interface CharacterContextType{
@@ -23,8 +23,8 @@ interface CharacterContextType{
     deleteCharacter: (id: string, name: string) => Promise<void>;
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
 
-    /* JSON 데이터 기반 보스 클리어 기록 가져오기 */
-    importPersistentRecords: (records: BossRecord[]) => Promise<{success: boolean; count: number; error?: string}>;
+    /* JSON 데이터 기반 캐릭터 및 보스 클리어 기록 가져오기 */
+    importPersistentRecords: (exportedData: ExportedData) => Promise<{success: boolean; count: number; error?: string}>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
@@ -51,7 +51,11 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                     setCharacters(currentChars);
                 }else{
                     // 최초 실행시 기본 캐릭터 세팅 및 저장
-                    const defaultChars: Character[] = [{id: '1', name: '캐릭터1'}];
+                    const defaultCharacter = {
+                        id: "1",
+                        name: "캐릭터1"
+                    };
+                    const defaultChars: Character[] = [defaultCharacter];
                     currentChars = defaultChars;
                     setCharacters(defaultChars);
                     await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(defaultChars));
@@ -196,17 +200,29 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     }
 
     // 보스 기록 가져오기
-    const importPersistentRecords = async (incomingRecords: BossRecord[])=>{
+    const importPersistentRecords = async (exportedData: ExportedData)=>{
         try{
-            // 데이터 무결성 검증 (배열 형태 확인)
-            if(!Array.isArray(incomingRecords)){
-                return {
-                    success: false,
-                    count: 0,
-                    error: "올바른 JSON 데이터 형식이 아닙니다. (배열이 아님)"
-                };
-            }
+            // 캐릭터 배열 상태에 병합
+            const mergedCharacterMap = new Map<string, Character>();
+            // 기존 캐릭터 배열의 캐릭터들을 맵에 추가
+            characters.forEach(c=>{
+                if(c.id){
+                    mergedCharacterMap.set(c.id, c);
+                }
+            })
+            exportedData.characters.forEach(c=>{
+                if(c.id){
+                    mergedCharacterMap.set(c.id, c);
+                }
+            });
             
+            // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
+            const mergedCharacterArray = Array.from(mergedCharacterMap.values());
+            setCharacters(mergedCharacterArray);
+            setSelectedCharacter(mergedCharacterArray[0]);
+            // 캐릭터 정보들을 로컬 스토리지에 병합
+            await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));
+
             // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
             const recordMap = new Map<string, BossRecord>();
             persistentRecords.forEach(r=>{
@@ -217,9 +233,9 @@ export function CharacterProvider({ children }: { children: ReactNode }){
 
             let importedCount = 0;
             // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
-            incomingRecords.forEach(incoming=>{
-                if(incoming.id && incoming.bossName && incoming.characterName){
-                    recordMap.set(incoming.id, incoming);
+            exportedData.persistentRecords.forEach(r=>{
+                if(r.id && r.bossName && r.characterName){
+                    recordMap.set(r.id, r);
                     importedCount++;
                 }
             });

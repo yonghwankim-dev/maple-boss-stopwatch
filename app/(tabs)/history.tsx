@@ -42,9 +42,16 @@ export default function CharacterHistoryScreen(){
             return;
         }
 
+        const exportData = {
+            version: "1.0",
+            exportedAt: new Date().toISOString(),
+            characters: characters,
+            persistentRecords: persistentRecords
+        };
+    
         // JSON 문자열로 변환
-        const jsonData = JSON.stringify(persistentRecords, null, 2);
-        const filename = `boss_clear_records_${new Date().toISOString().split('T')[0]}.json`;
+        const jsonData = JSON.stringify(exportData, null, 2);
+        const filename = `maple_stopwatch_data_${new Date().toISOString().split('T')[0]}.json`;
 
         // 플랫폼별 내보내기 분기 처리
         if(Platform.OS === 'web'){
@@ -87,8 +94,6 @@ export default function CharacterHistoryScreen(){
                     alert(`성공적으로 데이터를 가져왔습니다!\n총 ${result.count}개의 기록이 병합/업데이트 되었습니다.`);
 
                     // todo: 사용자 컨텍스트의 chracters 및 보스 기록 상태 동기화
-                    console.log("chracters : ", characters);
-                    console.log("selectedCharacter : ", selectedCharacter);
 
                     // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
                     if(characters.length > 0 && !selectedCharacter){
