@@ -10,11 +10,11 @@ import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
 import { formatTime, getTodayDate } from '@/src/utils/timeFormatter';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent, bossDifficultyMap, updateBossDifficulty } = useCharacter();
+  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
     
   // 보스 및 난이도 상태 관리
   const {selectedBossName, selectedBossDifficulty, setSelectedDifficulty, handleBossChange, handleBossDifficultyChange } = useBoss();
@@ -30,13 +30,6 @@ export default function StopwatchScreen() {
   const [manualSeconds, setManualSeconds] = useState<string>('');
   const [manualDate, setManualDate] = useState<string>(getTodayDate());
   
-  useEffect(()=>{
-    if(bossDifficultyMap[selectedBossName]){
-      setSelectedDifficulty(bossDifficultyMap[selectedBossName]);
-    }else if(BOSS_DATA[selectedBossName]){
-      setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
-    }
-  },[selectedBossName, bossDifficultyMap]);
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){

@@ -23,10 +23,6 @@ interface CharacterContextType{
     deleteCharacter: (id: string, name: string) => Promise<void>;
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
 
-    /* 보스 난이도 메모라이즈 기능 */
-    bossDifficultyMap: Record<string, string>; // 예: {"스우": "Hard", "루시드": "Hard"}
-    updateBossDifficulty: (bossName: string, difficulty: string)=> Promise<void>;
-
     /* JSON 데이터 기반 보스 클리어 기록 가져오기 */
     importPersistentRecords: (records: BossRecord[]) => Promise<{success: boolean; count: number; error?: string}>;
 }
@@ -207,20 +203,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     }
 
-    // 보스 난이도 선택 메모라이즈 업데이트 기능
-    const updateBossDifficulty = async (bossName: string, difficulty: string)=>{
-        try{
-            const updatedBossDifficultyMap = {
-            ...bossDifficultyMap,
-            [bossName]: difficulty
-            };
-            setBossDifficultyMap(updatedBossDifficultyMap);
-            await AsyncStorage.setItem(BOSS_DIFF_MAP_KEY, JSON.stringify(updatedBossDifficultyMap));
-        }catch(error){
-            console.error("Failed to save boss difficulty map", error);
-        }
-    };
-
     // 보스 기록 가져오기
     const importPersistentRecords = async (incomingRecords: BossRecord[])=>{
         try{
@@ -285,15 +267,11 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             updateChracter,
             saveToPersistent,
             deleteFromPersistent,
-            bossDifficultyMap,
-            updateBossDifficulty,
             importPersistentRecords
         }}>
             {children}
         </CharacterContext.Provider>
     )
-    
-    
 }
 
 export function useCharacter(){
