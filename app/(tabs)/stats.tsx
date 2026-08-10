@@ -1,3 +1,4 @@
+import { BossSelectorCard } from "@/components/BossSelectorCard";
 import { BOSS_DATA, getBossSortRank } from "@/constants/bossData";
 import { useBoss } from "@/src/context/BossContext";
 import { useCharacter } from "@/src/context/CharacterContext";
@@ -43,10 +44,19 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, persistentRecords} = useCharacter();
+    const {characters, persistentRecords, selectedCharacter} = useCharacter();
     const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
     
-    const {selectedBossName, selectedBossDifficulty, handleBossChange, handleBossDifficultyChange} = useBoss();
+    const {
+        selectedBossName, 
+        selectedBossDifficulty, 
+        handleBossChange, 
+        handleBossDifficultyChange, 
+        isSelectedBoss, 
+        isSelectedBossDifficulty, 
+        getCurrentSelectedBossDifficulties,
+        formatCurrentBossTarget
+    } = useBoss();
     
     // 보스 목록 리스트
     const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
@@ -190,7 +200,16 @@ export default function StatsScreen(){
                 </Card>
 
                 {/* 보스 및 난이도 선택 필터 세션 */}
-                <Card style={styles.card}>
+                <BossSelectorCard
+                    selectedCharacter={selectedCharacter}
+                    handleBossChange={handleBossChange}
+                    handleBossDifficultyChange={handleBossDifficultyChange}
+                    isSelectedBoss={isSelectedBoss}
+                    isSelectedBossDifficulty={isSelectedBossDifficulty}
+                    getCurrentSelectedBossDifficulties={getCurrentSelectedBossDifficulties}
+                    formatCurrentBossTarget={formatCurrentBossTarget}
+                />
+                {/* <Card style={styles.card}>
                     <Card.Title title="보스 및 난이도 선택"/>
                     <Card.Content style={{gap:12}}>
                         {/* 1차 카테고리: 보스 대분류 */}
@@ -253,7 +272,7 @@ export default function StatsScreen(){
                         
                     </Card.Content>
 
-                </Card>
+                </Card> */}
 
                 {/* 꺽은선 추이 그래프 세션 */}
                 <Card style={styles.card}>

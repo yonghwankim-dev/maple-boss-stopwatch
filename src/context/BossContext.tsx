@@ -8,6 +8,10 @@ interface BossContextType{
     selectedBossDifficulty: string;
     handleBossChange: (selectedBoss: string) => void;
     handleBossDifficultyChange: (difficulty: string) => void;
+    isSelectedBoss: (boss: string) => boolean;
+    isSelectedBossDifficulty: (difficulty: string) => boolean;
+    getCurrentSelectedBossDifficulties: () => string[];
+    formatCurrentBossTarget: () => string;
 }
 
 const BossContext = createContext<BossContextType | undefined>(undefined);
@@ -59,6 +63,26 @@ export function BossProvider({children} : {children: ReactNode}){
         }        
     }
 
+    // 현재 보스 선택 판단 여부
+    const isSelectedBoss = (boss: string)=>{
+        return boss === selectedBossName;
+    }
+
+    // 현재 보스 난이도 판단 여부
+    const isSelectedBossDifficulty = (difficulty: string)=>{
+        return difficulty === selectedBossDifficulty;
+    }
+
+    // 현재 선택된 보스의 난이도 리스르를 반환
+    const getCurrentSelectedBossDifficulties = ()=>{
+        return BOSS_DATA[selectedBossName];
+    }
+
+    // 현재 선택된 보스의 보스 이름과 난이도를 포맷팅해서 반환
+    const formatCurrentBossTarget = ()=>{
+        return `${selectedBossName} (${selectedBossDifficulty})`;
+    }
+
     return (
         <BossContext.Provider
             value={{
@@ -66,13 +90,19 @@ export function BossProvider({children} : {children: ReactNode}){
                 setSelectedBossName,
                 selectedBossDifficulty,
                 handleBossChange,
-                handleBossDifficultyChange
+                handleBossDifficultyChange,
+                isSelectedBoss,
+                isSelectedBossDifficulty,
+                getCurrentSelectedBossDifficulties,
+                formatCurrentBossTarget
             }}
         >
             {children}
         </BossContext.Provider>
     )
 }
+
+
 
 export function useBoss(){
     const context = useContext(BossContext);

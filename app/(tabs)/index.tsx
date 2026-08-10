@@ -3,7 +3,6 @@ import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, Segmented
 
 import { BossSelectorCard } from '@/components/BossSelectorCard';
 import { View } from '@/components/Themed';
-import { BOSS_DATA } from '@/constants/bossData';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useBoss } from '@/src/context/BossContext';
 import { useCharacter } from '@/src/context/CharacterContext';
@@ -17,7 +16,16 @@ export default function StopwatchScreen() {
   const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
     
   // 보스 및 난이도 상태 관리
-  const {selectedBossName, selectedBossDifficulty, setSelectedDifficulty, handleBossChange, handleBossDifficultyChange } = useBoss();
+  const {
+      selectedBossName, 
+      selectedBossDifficulty, 
+      handleBossChange, 
+      handleBossDifficultyChange, 
+      isSelectedBoss, 
+      isSelectedBossDifficulty, 
+      getCurrentSelectedBossDifficulties,
+      formatCurrentBossTarget
+  } = useBoss();
 
   // UI 메뉴 오픈 여부 제어 상태
   const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
@@ -128,26 +136,6 @@ export default function StopwatchScreen() {
   // 보스 클리어 기록 삭제 핸들러
   const handleDeleteTempRecord = (id: string)=>{
     setTempRecords((prevRecords)=>prevRecords.filter((record)=>record.id !== id));
-  }
-
-  // 현재 보스 선택 판단 여부
-  const isSelectedBoss = (boss: string)=>{
-    return boss === selectedBossName;
-  }
-
-  // 현재 보스 난이도 판단 여부
-  const isSelectedBossDifficulty = (diff: string)=>{
-    return diff === selectedBossDifficulty;
-  }
-
-  // 현재 선택된 보스의 난이도 리스르를 반환
-  const getCurrentSelectedBossDifficulties = ()=>{
-    return BOSS_DATA[selectedBossName];
-  }
-
-  // 현재 선택된 보스의 보스 이름과 난이도를 포맷팅해서 반환
-  const formatCurrentBossTarget = ()=>{
-    return `${selectedBossName} (${selectedBossDifficulty})`;
   }
 
   return (
