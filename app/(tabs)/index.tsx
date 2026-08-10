@@ -17,7 +17,7 @@ export default function StopwatchScreen() {
   const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent, bossDifficultyMap, updateBossDifficulty } = useCharacter();
     
   // 보스 및 난이도 상태 관리
-  const {selectedBossName, setSelectedBossName, selectedBossDifficulty, setSelectedDifficulty } = useBoss();
+  const {selectedBossName, selectedBossDifficulty, setSelectedDifficulty, handleBossChange, handleBossDifficultyChange } = useBoss();
 
   // UI 메뉴 오픈 여부 제어 상태
   const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
@@ -37,24 +37,6 @@ export default function StopwatchScreen() {
       setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
     }
   },[selectedBossName, bossDifficultyMap]);
-
-  // 보스 변경 핸들러
-  const handleBossChange = (selectedBoss: string) => {
-    setSelectedBossName(selectedBoss);
-    // 이전에 이 보스에서 선택했던 난이도가 있다면 불러오고, 없으면 첫 난이도로 지정
-    const memorizeDifficulty = bossDifficultyMap[selectedBoss];
-    if(memorizeDifficulty && BOSS_DATA[selectedBoss].includes(memorizeDifficulty)){
-      setSelectedDifficulty(memorizeDifficulty);
-    }else{
-      setSelectedDifficulty(BOSS_DATA[selectedBoss][0]);
-    }
-  };
-
-  // 보스 난이도 변경 핸들러
-  const handleBossDifficultyChange = async (selectedDifficulty: string)=>{
-    setSelectedDifficulty(selectedDifficulty);
-    await updateBossDifficulty(selectedBossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
-  }
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){
