@@ -1,22 +1,31 @@
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
-import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, Surface, TextInput } from 'react-native-paper';
+import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
 
+import { BossSelectorCard } from '@/components/BossSelectorCard';
 import { View } from '@/components/Themed';
-import { BOSS_DATA } from '@/constants/bossData';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
+import { useBoss } from '@/src/context/BossContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
 import { formatTime, getTodayDate } from '@/src/utils/timeFormatter';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent, bossDifficultyMap, updateBossDifficulty } = useCharacter();
+  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
     
   // 보스 및 난이도 상태 관리
-  const [bossName, setBossName] = useState<string>("스우");
-  const [difficulty, setDifficulty] = useState<string>(BOSS_DATA["스우"][0]);
+  const {
+      selectedBossName, 
+      selectedBossDifficulty, 
+      handleBossChange, 
+      handleBossDifficultyChange, 
+      isSelectedBoss, 
+      isSelectedBossDifficulty, 
+      getCurrentSelectedBossDifficulties,
+      formatCurrentBossTarget
+  } = useBoss();
 
   // UI 메뉴 오픈 여부 제어 상태
   const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
@@ -29,31 +38,6 @@ export default function StopwatchScreen() {
   const [manualSeconds, setManualSeconds] = useState<string>('');
   const [manualDate, setManualDate] = useState<string>(getTodayDate());
   
-  useEffect(()=>{
-    if(bossDifficultyMap[bossName]){
-      setDifficulty(bossDifficultyMap[bossName]);
-    }else if(BOSS_DATA[bossName]){
-      setDifficulty(BOSS_DATA[bossName][0]);
-    }
-  },[bossName, bossDifficultyMap]);
-
-  // 보스 변경 핸들러
-  const handleBossChange = (selectedBoss: string) => {
-    setBossName(selectedBoss);
-    // 이전에 이 보스에서 선택했던 난이도가 있다면 불러오고, 없으면 첫 난이도로 지정
-    const memorizeDifficulty = bossDifficultyMap[selectedBoss];
-    if(memorizeDifficulty && BOSS_DATA[selectedBoss].includes(memorizeDifficulty)){
-      setDifficulty(memorizeDifficulty);
-    }else{
-      setDifficulty(BOSS_DATA[selectedBoss][0]);
-    }
-  };
-
-  // 보스 난이도 변경 핸들러
-  const handleBossDifficultyChange = async (selectedDifficulty: string)=>{
-    setDifficulty(selectedDifficulty);
-    await updateBossDifficulty(bossName, selectedDifficulty); // 선택한 난이도를 스토리지에 저장
-  }
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){
@@ -70,8 +54,8 @@ export default function StopwatchScreen() {
     const newRecord: BossRecord = {
       id: Math.random().toString(36).substring(2, 9),
       characterName: selectedCharacter.name,
-      bossName: bossName,
-      difficulty: difficulty,
+      bossName: selectedBossName,
+      difficulty: selectedBossDifficulty,
       clearTime: formatTime(elapsedSeconds),
       clearTimeSec: elapsedSeconds,
       // 출력 형식: YYYY-MM-DD
@@ -134,8 +118,8 @@ export default function StopwatchScreen() {
     const newRecord: BossRecord = {
       id: Math.random().toString(36).substring(2, 9),
       characterName: selectedCharacter.name,
-      bossName: bossName,
-      difficulty: difficulty,
+      bossName: selectedBossName,
+      difficulty: selectedBossDifficulty,
       clearTime: formatTime(totalSeconds),
       clearTimeSec: totalSeconds,
       createdAt: manualDate
@@ -191,96 +175,15 @@ export default function StopwatchScreen() {
         </Card>
 
         {/* 보스 및 난이도 설정 카드 */}
-        <Card style={styles.card}>
-          <Card.Title title="보스 및 난이도 설정" subtitle="기록을 측정할 보스 및 난이도를 선택하세요."/>
-          <Card.Content style={{gap: 16}}>
-            {/* 6열 바둑판 그리드 형태의 보스 즉시 선택 구역 */}
-            <View style={styles.dropdownWrapper}>
-              <Text style={styles.dropdownLabel}> 보스명</Text>
-
-              <View style={styles.bossGridContainer}>
-                {Object.keys(BOSS_DATA).map((boss)=>{
-                  const isSelected = boss === bossName;
-                  return (
-                    <Pressable
-                      key={boss}
-                      onPress={()=>handleBossChange(boss)}
-                      style={styles.gridItemWrapper}
-                    >
-                      <Surface
-                        style={[
-                          styles.bossGridCell,
-                          isSelected && styles.bossGridCellActive
-                        ]}
-                        elevation={isSelected ? 2 : 0}
-                      >
-                        <Text
-                          style={[
-                            styles.bossGridText,
-                            isSelected && styles.bossGridTextActive
-                          ]}
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                        >
-                          {boss}
-                        </Text>
-                      </Surface>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-            <View style={styles.dropdownWrapper}>
-              <Text style={styles.dropdownLabel}>난이도</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipRow}
-              >
-                {BOSS_DATA[bossName].map(diff => {
-                  const isSelected = diff === difficulty;
-                  return (
-                    <Pressable
-                      key={diff}
-                      onPress={()=>handleBossDifficultyChange(diff)}
-                      style={styles.pressableWrapper}
-                    >
-                      <Surface
-                        style={[
-                          styles.diffChip,
-                          isSelected && styles.diffChipActive
-                        ]}
-                        elevation={isSelected ? 1 : 0}
-                      >
-                        <Text
-                          style={[
-                            styles.diffChipText,
-                            isSelected && styles.diffChipTextActive
-                          ]}
-                        >
-                          {diff}
-                        </Text>
-
-                      </Surface>
-
-                    </Pressable>
-                  );
-                })}
-
-              </ScrollView>
-            </View>
-            <Divider/>
-
-            {/* 선택한 캐릭터 / 보스 / 난이도 출력 */}
-            <Text style={styles.infoText}>
-              타겟: <Text style={styles.boldChar}>
-                {selectedCharacter ? selectedCharacter.name : '미선택'}
-                </Text> ➡️ <Text style={styles.boldBoss}>{bossName} ({difficulty})</Text>
-            </Text>
-          </Card.Content>
-
-        </Card>
-
+        <BossSelectorCard
+          handleBossChange={handleBossChange}
+          handleBossDifficultyChange={handleBossDifficultyChange}
+          isSelectedBoss={isSelectedBoss}
+          isSelectedBossDifficulty={isSelectedBossDifficulty}
+          getCurrentSelectedBossDifficulties={getCurrentSelectedBossDifficulties}
+          formatCurrentBossTarget={formatCurrentBossTarget}
+        />
+        
         {/* 기록 모드 전환 탭 */}
         <View style={styles.tabWrapper}>
           <SegmentedButtons

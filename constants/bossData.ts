@@ -15,5 +15,23 @@ export const BOSS_DATA: Record<string, string[]> = {
   "찬란한 흉성": ["Normal", "Hard"],
   "림보": ["Normal", "Hard"],
   "발드릭스": ["Normal", "Hard"], 
-  "유피테르": ["Normal", "Hard"]
+  "유피테르": ["Normal", "Hard"],
+  "메이린": ["Normal", "Hard"],
+  "벨리나": ["Easy", "Normal", "Hard"]
 };
+
+export const BOSS_ORDER = Object.keys(BOSS_DATA);
+
+export const getBossSortRank = (bossName: string, difficulty: string)=>{
+  const bossIndex = BOSS_ORDER.indexOf(bossName);
+  const validBossIndex = bossIndex !== -1 ? bossIndex : 999;
+  
+  const difficultyList = BOSS_DATA[bossName] || [];
+  const difficultyIndex = difficultyList.indexOf(difficulty);
+  const validDifficultyIndex = difficultyIndex !== -1 ? difficultyIndex : 999;
+
+  return {
+    bossIndex: validBossIndex,
+    difficultyIndex: validDifficultyIndex
+  };
+}

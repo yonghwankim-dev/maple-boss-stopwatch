@@ -1,10 +1,12 @@
-import { BOSS_DATA } from "@/constants/bossData";
+import { BossSelectorCard } from "@/components/BossSelectorCard";
+import { getBossSortRank } from "@/constants/bossData";
+import { useBoss } from "@/src/context/BossContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
-import { Button, Card, Divider, IconButton, List, Menu, Provider, Surface, Text } from "react-native-paper";
+import { Card, Divider, IconButton, List, Provider, Surface, Text } from "react-native-paper";
 import { G as SvgG, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 
 if(Platform.OS === 'web' && typeof window !== 'undefined'){
@@ -42,19 +44,22 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, persistentRecords, bossDifficultyMap, updateBossDifficulty} = useCharacter();
-    const [bossMenuVisible, setBossMenuVisible] = useState<boolean>(false);
-    
-    
-    // 보스 목록 리스트
-    const bossKeys = useMemo(()=>Object.keys(BOSS_DATA), []);
+    const {characters, persistentRecords} = useCharacter();
 
+    const {
+        selectedBossName, 
+        selectedBossDifficulty, 
+        handleBossChange, 
+        handleBossDifficultyChange, 
+        isSelectedBoss, 
+        isSelectedBossDifficulty, 
+        getCurrentSelectedBossDifficulties,
+        formatCurrentBossTarget
+    } = useBoss();
+    
     // 통계를 볼 캐릭터 필터링 상태 정의 (기본값: 첫번째 캐릭터)
     const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
-    const [selectedBossName, setSelectedBossName] = useState<string>(bossKeys[0]);
-    const [selectedDifficulty, setSelectedDifficulty] = useState<string>(BOSS_DATA[bossKeys[0]][0]);
     
-
     useEffect(()=>{
         // 등록된 캐릭터가 로드되었을때 초기 선택 캐릭터명 동기화
         if(characters.length > 0 && !selectedCharName){
@@ -62,24 +67,12 @@ export default function StatsScreen(){
         }
     },[characters]);
 
-    // 선택된 보스나 메모라이즈 맵이 로드/변경될때마다 난이도 매칭 제어
-    useEffect(()=>{
-        if(BOSS_DATA[selectedBossName]){
-            const memorizedDifficulty = bossDifficultyMap[selectedBossName];
-            if(memorizedDifficulty && BOSS_DATA[selectedBossName].includes(memorizedDifficulty)){
-                setSelectedDifficulty(memorizedDifficulty);
-            }else{
-                setSelectedDifficulty(BOSS_DATA[selectedBossName][0]);
-            }        
-        }
-    }, [selectedBossName, bossDifficultyMap]);
-    
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
         const filtered = persistentRecords.filter(r => 
             r.characterName === selectedCharName &&
             r.bossName === selectedBossName &&
-            r.difficulty === selectedDifficulty
+            r.difficulty === selectedBossDifficulty
         );
 
         // 일자별 가장 빠른 기록을 담을 임시 맵 객체 선언
@@ -102,27 +95,38 @@ export default function StatsScreen(){
         return Object.values(dailyBestMap)
             .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
             .slice(-5); // 최근 5개만
-    }, [persistentRecords, selectedCharName, selectedBossName, selectedDifficulty]);
+    }, [persistentRecords, selectedCharName, selectedBossName, selectedBossDifficulty]);
 
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
         const filtered = persistentRecords.filter(r => r.characterName === selectedCharName);
-        // key: 보스이름, value: 클리어시간(초단위)
-        const bossMap: {[key: string]: number} = {};
+        type RecordType = typeof persistentRecords[number];
+        // key: 보스이름, value: 보스 기록 데이터 객체
+        const bossMap: {[key: string]: RecordType} = {};
 
         filtered.forEach(r=>{
             // 리스트 식별 명칭에 난이도를 함께 결합 (예: '스우 (Hard)')
             const displayName = `${r.bossName} (${r.difficulty})`
 
-            if(!bossMap[displayName] || r.clearTimeSec < bossMap[displayName]){
-                bossMap[displayName] = r.clearTimeSec;
+            if(!bossMap[displayName] || r.clearTimeSec < bossMap[displayName].clearTimeSec){
+                bossMap[displayName] = r;
             }
         });
 
-        return Object.entries(bossMap).map(([bossDisplayName, clearTimeSec]) => ({
+        return Object.entries(bossMap).map(([bossDisplayName, record]) => ({
             bossDisplayName,
-            clearTimeSec
-        }));
+            record
+        }))
+        .sort((a,b)=>{
+            const rankA = getBossSortRank(a.record.bossName, a.record.difficulty);
+            const rankB = getBossSortRank(b.record.bossName, b.record.difficulty);
+            // 1. 보스 순서가 다르면 보스 순서대로 정렬
+            if(rankA.bossIndex !== rankB.bossIndex){
+                return rankA.bossIndex - rankB.bossIndex;
+            }
+            // 2. 보스가 같다면 난이도 순서대로 정렬(예: Easy -> Normal -> Hard -> Extream)
+            return rankA.difficultyIndex - rankB.difficultyIndex;
+        });
     }, [persistentRecords, selectedCharName]);
 
     // 차트 데이터 및 Y축 5분 단위 계산 로직
@@ -158,29 +162,6 @@ export default function StatsScreen(){
 
     }, [filteredRecords]);
 
-    // 보스 변경 핸들러
-    const handleBossChange = (boss: string)=>{
-        // selectedBossName 상태 변경
-        setSelectedBossName(boss);
-        // 보스 메뉴 닫기
-        setBossMenuVisible(false);
-        // 이전에 선택한 보스 난이도를 현재 선택된 보스 난이도에 적용하기
-        const memorizedDifficulty = bossDifficultyMap[boss];
-        if(memorizedDifficulty && BOSS_DATA[boss].includes(memorizedDifficulty)){
-            setSelectedDifficulty(memorizedDifficulty);
-        }else{
-            setSelectedDifficulty(BOSS_DATA[boss][0]);
-        }
-    }
-
-    const handleBossDifficultyChange = async (difficulty: string)=>{
-        // 선택된 난이도 변경
-        setSelectedDifficulty(difficulty);
-        
-        // 저장소에 난이도 값 업데이트
-        await updateBossDifficulty(selectedBossName, difficulty);
-    };
-
     const screenWidth = Dimensions.get("window").width;
     const chartWidth = Math.min(screenWidth - 64, 540); // 반응형 너비 대응
 
@@ -215,74 +196,19 @@ export default function StatsScreen(){
                 </Card>
 
                 {/* 보스 및 난이도 선택 필터 세션 */}
-                <Card style={styles.card}>
-                    <Card.Title title="보스 및 난이도 선택"/>
-                    <Card.Content style={{gap:12}}>
-                        {/* 1차 카테고리: 보스 대분류 */}
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterLabel}>보스 선택</Text>
-                            <Menu
-                                visible={bossMenuVisible}
-                                onDismiss={()=>setBossMenuVisible(false)}
-                                anchor={
-                                    <Button
-                                        mode="outlined"
-                                        onPress={()=>setBossMenuVisible(true)}
-                                        style={styles.pickerBtn}
-                                        contentStyle={styles.pickerBtnContent}
-                                        icon="chevron-down"
-                                        labelStyle={styles.pickerBtnLabel}
-                                    >
-                                        {selectedBossName ? selectedBossName : '보스를 선택하세요'}
-                                    </Button>
-                                }
-                            >
-                                {bossKeys.map((boss)=>(
-                                    <Menu.Item
-                                        key={boss}
-                                        onPress={()=>{handleBossChange(boss)}}
-                                        title={boss}
-                                        titleStyle={boss === selectedBossName ? styles.activeMenuItemText : null}
-                                    />
-                                ))}
-                            </Menu>
-                        </View>
-                        <Divider style={{marginVertical: 4}}/>
-
-                        {/* 2차 카테고리: 동적 난이도 소분류 */}
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterLabel}>난이도</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                                {BOSS_DATA[selectedBossName]?.map(diff=>{
-                                    const isSelected = diff === selectedDifficulty;
-                                    return (
-                                        <Pressable
-                                            key={diff}
-                                            onPress={()=>handleBossDifficultyChange(diff)}
-                                            style={styles.pressableWrapper}
-                                        >
-                                            <Surface
-                                                style={[styles.diffChip, isSelected && styles.diffChipActive]}
-                                            >
-                                                <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
-                                                    {diff}
-                                                </Text>
-                                            </Surface>
-                                        </Pressable>
-                                        
-                                    )
-                                })}
-                            </ScrollView>
-
-                        </View>
-                        
-                    </Card.Content>
-
-                </Card>
-
+                <BossSelectorCard
+                    handleBossChange={handleBossChange}
+                    handleBossDifficultyChange={handleBossDifficultyChange}
+                    isSelectedBoss={isSelectedBoss}
+                    isSelectedBossDifficulty={isSelectedBossDifficulty}
+                    getCurrentSelectedBossDifficulties={getCurrentSelectedBossDifficulties}
+                    formatCurrentBossTarget={formatCurrentBossTarget}
+                    subtitle="통계를 확인할 보스 및 난이도를 선택하세요."
+                />
+                
                 {/* 꺽은선 추이 그래프 세션 */}
                 <Card style={styles.card}>
-                    <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
+                    <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedBossDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
                     <Card.Content style={styles.chartCenter}>
                         {chartConfigValues ? (
                             <LineChart
@@ -359,7 +285,11 @@ export default function StatsScreen(){
                                             titleStyle={styles.bossTitle}
                                             style={styles.listItem}
                                         />
-                                        <Text style={styles.bestTime}>{formatTime(item.clearTimeSec)}</Text>
+                                        <View style={styles.recordContainer}>
+                                            <Text style={styles.bestTime}>{formatTime(item.record.clearTimeSec)}</Text>
+                                            <Text style={styles.bestCreatedAt}>{item.record.createdAt}</Text>
+                                        </View>
+                                        
                                     </View>
                                     {index < bestRecords.length - 1 && <Divider/>}
                                 </React.Fragment>
@@ -524,13 +454,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold'
   },
+  recordContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center'
+  },
   bestTime: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#4caf50',
+    color: '#2196f3',
     marginRight: 16
   },
-
+  bestCreatedAt: {
+    fontSize: 11,
+    color: '#8e8e93',
+    marginTop: 2,
+    fontWeight: '400'
+  },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 30,
