@@ -31,14 +31,12 @@ const CharacterContext = createContext<CharacterContextType | undefined>(undefin
 
 const CHARACTERS_STORAGE_KEY = '@boss_clear_characters_list';
 const RECORD_STORAGE_KEY = '@boss_clear_persistent_records';
-const BOSS_DIFF_MAP_KEY = '@boss_difficulty_memorize_map';
 
 export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
     const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
-    const [bossDifficultyMap, setBossDifficultyMap] = useState<Record<string, string>>({});
     
     // 앱 구동시 로컬 저장소에서 영속 데이터 로드
     useEffect(()=>{
@@ -68,12 +66,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 const storedData = await AsyncStorage.getItem(RECORD_STORAGE_KEY);
                 if(storedData){
                     setPersistentRecords(JSON.parse(storedData));
-                }
-
-                // 3. 보스별 최근 난이도 선택 맵 로드
-                const storedMap = await AsyncStorage.getItem(BOSS_DIFF_MAP_KEY);
-                if(storedMap){
-                    setBossDifficultyMap(JSON.parse(storedMap));
                 }
             }catch(error){
                 console.error("Failed to load records from AsyncStorage", error);
@@ -238,6 +230,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             // 상태 업데이트 및 스토리지 영속화
             setPersistentRecords(mergedRecords);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
+
             // success, count json 데이터 리턴
             return {
                 success: true,

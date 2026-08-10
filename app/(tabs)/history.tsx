@@ -87,6 +87,8 @@ export default function CharacterHistoryScreen(){
                     alert(`성공적으로 데이터를 가져왔습니다!\n총 ${result.count}개의 기록이 병합/업데이트 되었습니다.`);
 
                     // todo: 사용자 컨텍스트의 chracters 및 보스 기록 상태 동기화
+                    console.log("chracters : ", characters);
+                    console.log("selectedCharacter : ", selectedCharacter);
 
                     // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
                     if(characters.length > 0 && !selectedCharacter){
