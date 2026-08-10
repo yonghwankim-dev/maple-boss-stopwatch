@@ -6,7 +6,6 @@ interface BossContextType{
     selectedBossName: string;
     setSelectedBossName: React.Dispatch<React.SetStateAction<string>>;
     selectedBossDifficulty: string;
-    setSelectedDifficulty: React.Dispatch<React.SetStateAction<string>>;
     handleBossChange: (selectedBoss: string) => void;
     handleBossDifficultyChange: (difficulty: string) => void;
 }
@@ -38,14 +37,9 @@ export function BossProvider({children} : {children: ReactNode}){
         if(memorizeDifficulty && availableDifficulties.includes(memorizeDifficulty)){
             setSelectedDifficulty(memorizeDifficulty);
         }else{
-            const defaultDifficulty = availableDifficulties[0];
+            const firstDifficultyIndex = 0;
+            const defaultDifficulty = availableDifficulties[firstDifficultyIndex];
             setSelectedDifficulty(defaultDifficulty);
-
-            // 새로 설정된 기본 난이도로 맵에 보존
-            setBossDifficultyMap((prev)=>({
-                ...prev,
-                [boss]: defaultDifficulty
-            }));
         }
     }
 
@@ -71,7 +65,6 @@ export function BossProvider({children} : {children: ReactNode}){
                 selectedBossName,
                 setSelectedBossName,
                 selectedBossDifficulty,
-                setSelectedDifficulty,
                 handleBossChange,
                 handleBossDifficultyChange
             }}
