@@ -6,7 +6,7 @@ import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
-import { Button, Card, Divider, IconButton, List, Menu, Provider, Surface, Text } from "react-native-paper";
+import { Card, Divider, IconButton, List, Provider, Surface, Text } from "react-native-paper";
 import { G as SvgG, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 
 if(Platform.OS === 'web' && typeof window !== 'undefined'){
@@ -209,70 +209,7 @@ export default function StatsScreen(){
                     getCurrentSelectedBossDifficulties={getCurrentSelectedBossDifficulties}
                     formatCurrentBossTarget={formatCurrentBossTarget}
                 />
-                {/* <Card style={styles.card}>
-                    <Card.Title title="보스 및 난이도 선택"/>
-                    <Card.Content style={{gap:12}}>
-                        {/* 1차 카테고리: 보스 대분류 */}
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterLabel}>보스 선택</Text>
-                            <Menu
-                                visible={bossMenuVisible}
-                                onDismiss={()=>setBossMenuVisible(false)}
-                                anchor={
-                                    <Button
-                                        mode="outlined"
-                                        onPress={()=>setBossMenuVisible(true)}
-                                        style={styles.pickerBtn}
-                                        contentStyle={styles.pickerBtnContent}
-                                        icon="chevron-down"
-                                        labelStyle={styles.pickerBtnLabel}
-                                    >
-                                        {selectedBossName ? selectedBossName : '보스를 선택하세요'}
-                                    </Button>
-                                }
-                            >
-                                {bossKeys.map((boss)=>(
-                                    <Menu.Item
-                                        key={boss}
-                                        onPress={()=>{handleBossChange(boss)}}
-                                        title={boss}
-                                        titleStyle={boss === selectedBossName ? styles.activeMenuItemText : null}
-                                    />
-                                ))}
-                            </Menu>
-                        </View>
-                        <Divider style={{marginVertical: 4}}/>
-
-                        {/* 2차 카테고리: 동적 난이도 소분류 */}
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterLabel}>난이도</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                                {BOSS_DATA[selectedBossName]?.map(diff=>{
-                                    const isSelected = diff === selectedBossDifficulty;
-                                    return (
-                                        <Pressable
-                                            key={diff}
-                                            onPress={()=>handleBossDifficultyChange(diff)}
-                                            style={styles.pressableWrapper}
-                                        >
-                                            <Surface
-                                                style={[styles.diffChip, isSelected && styles.diffChipActive]}
-                                            >
-                                                <Text style={[styles.diffChipText, isSelected && styles.diffChipTextActive]}>
-                                                    {diff}
-                                                </Text>
-                                            </Surface>
-                                        </Pressable>
-                                        
-                                    )
-                                })}
-                            </ScrollView>
-
-                        </View>
-                        
-                    </Card.Content>
-
-                </Card> */}
+                
 
                 {/* 꺽은선 추이 그래프 세션 */}
                 <Card style={styles.card}>
