@@ -51,11 +51,18 @@ export function BossProvider({children} : {children: ReactNode}){
 
     const handleBossDifficultyChange = (difficulty: string)=>{
         setSelectedDifficulty(difficulty);
-        setBossDifficultyMap((prev)=>({
-            ...prev,
+        const updateMap = {
+            ...bossDifficultyMap,
             [selectedBossName]: difficulty
-        }));
-        AsyncStorage.setItem(BOSS_DIFF_MAP_KEY, JSON.stringify(bossDifficultyMap));        
+        };
+
+        setBossDifficultyMap(updateMap);
+
+        try{
+            AsyncStorage.setItem(BOSS_DIFF_MAP_KEY, JSON.stringify(updateMap));    
+        }catch(error){
+            console.error("AsyncStorage 저장 실패 : ", error);
+        }        
     }
 
     return (
