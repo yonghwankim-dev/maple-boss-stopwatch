@@ -90,8 +90,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             const updated = [record, ...persistentRecords];
             setPersistentRecords(updated);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
-
-            // TODO: 추후 Firebase Firestore 연동시 여기에 추가
         }catch(error){
             console.error("Failed to save record persistently", error);
         }
