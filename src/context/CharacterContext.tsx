@@ -219,6 +219,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
             const mergedCharacterArray = Array.from(mergedCharacterMap.values());
             setCharacters(mergedCharacterArray);
+            // 캐릭터 선택을 제일 배열의 0번째 캐릭터로 선택
             setSelectedCharacter(mergedCharacterArray[0]);
             // 캐릭터 정보들을 로컬 스토리지에 병합
             await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));

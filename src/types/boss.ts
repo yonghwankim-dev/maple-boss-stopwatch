@@ -9,8 +9,9 @@ export interface BossRecord{
 }
 
 export interface Character{
-    id: string,
-    name: string
+    id: string, // UUID v4   
+    name: string,
+    createdAt: Date
 }
 
 export interface ExportedData{
