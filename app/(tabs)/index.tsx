@@ -105,7 +105,7 @@ export default function StopwatchScreen() {
 
     const totalSeconds = mins * 60 + secs;
     const newRecord: BossRecord = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: uuid.v4(),
       characterName: selectedCharacter.name,
       bossName: selectedBossName,
       difficulty: selectedBossDifficulty,
