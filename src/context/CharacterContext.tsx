@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import uuid from 'react-native-uuid';
 import { BossRecord, Character, ExportedData } from "../types/boss";
 
 
@@ -51,10 +52,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                     setCharacters(currentChars);
                 }else{
                     // 최초 실행시 기본 캐릭터 세팅 및 저장
-                    const defaultCharacter = {
-                        id: "1",
-                        name: "캐릭터1"
-                    };
+                    const defaultCharacter = createCharacter("캐릭터1");
                     const defaultChars: Character[] = [defaultCharacter];
                     currentChars = defaultChars;
                     setCharacters(defaultChars);
@@ -77,6 +75,14 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         };
         loadInitialStorageData();
     }, []);
+
+    const createCharacter = (chracterName: string): Character=>{
+        return {
+            id: uuid.v4(),
+            name: chracterName,
+            createdAt: new Date()
+        };
+    }
 
     // 영속 데이터 추가
     const saveToPersistent = async (record: BossRecord)=>{
@@ -118,10 +124,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             };
         }
 
-        const newChar: Character = {
-            id: Math.random().toString(32).substring(2, 9),
-            name: trimmedName
-        };
+        const newChar: Character = createCharacter(trimmedName);
 
         const updatedChars = [...characters, newChar];
         setCharacters(updatedChars);
@@ -191,7 +194,10 @@ export function CharacterProvider({ children }: { children: ReactNode }){
 
         // 현재 선택된 캐리겉의 이름이 바뀐 경우 상태 동기화
         if(selectedCharacter?.id === id){
-            setSelectedCharacter({id, name: trimmedName});
+            setSelectedCharacter({
+                ...selectedCharacter,
+                name: trimmedName
+            });
         }
         
         return {
