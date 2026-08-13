@@ -44,7 +44,7 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, persistentRecords} = useCharacter();
+    const {characters, selectedCharacter, persistentRecords} = useCharacter();
 
     const {
         selectedBossName, 
@@ -70,7 +70,7 @@ export default function StatsScreen(){
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
         const filtered = persistentRecords.filter(r => 
-            r.characterName === selectedCharName &&
+            r.characterId === selectedCharacter?.id &&
             r.bossName === selectedBossName &&
             r.difficulty === selectedBossDifficulty
         );
@@ -99,7 +99,7 @@ export default function StatsScreen(){
 
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
-        const filtered = persistentRecords.filter(r => r.characterName === selectedCharName);
+        const filtered = persistentRecords.filter(r => r.characterId === selectedCharacter?.id);
         type RecordType = typeof persistentRecords[number];
         // key: 보스이름, value: 보스 기록 데이터 객체
         const bossMap: {[key: string]: RecordType} = {};

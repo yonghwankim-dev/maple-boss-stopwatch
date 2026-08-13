@@ -1,5 +1,5 @@
 import { useCharacter } from "@/src/context/CharacterContext";
-import { formatDate } from "@/src/utils/timeFormatter";
+import { formatDate, formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
@@ -23,7 +23,7 @@ export default function CharacterHistoryScreen(){
             return [];
         }
         return persistentRecords
-            .filter((record)=>record.characterName === selectedCharacter.name)
+            .filter((record)=>record.characterId === selectedCharacter.id)
             .sort((a,b)=>new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [persistentRecords, selectedCharacter]);
 
@@ -204,7 +204,7 @@ export default function CharacterHistoryScreen(){
                                 <List.Item
                                     title={`${item.bossName} (${item.difficulty})`}
                                     titleStyle={styles.bossTitle}
-                                    description={`⏱️ 클리어 시간: ${item.clearTime}  |  📅 날짜: ${item.clearDate}`}
+                                    description={`⏱️ 클리어 시간: ${formatTime(item.clearTimeSec)}  |  📅 날짜: ${item.clearDate}`}
                                     descriptionStyle={styles.bossDescription}
                                     right={(props)=>{
                                         return <IconButton

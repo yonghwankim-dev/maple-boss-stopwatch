@@ -1,10 +1,10 @@
 export interface BossRecord{
-  id: string;
-  characterName: string;
+  id: string; // UUID v4
+  characterId: string; // UUID v4
   bossName: string;
   difficulty: string;
-  clearTime: string; // 화면 출력용(예: 15분 40초)
   clearTimeSec: number;
+  clearDate: string; // 예: "2026-08-13" (YYYY-MM-DD 형식)
   createdAt: Date;
 }
 

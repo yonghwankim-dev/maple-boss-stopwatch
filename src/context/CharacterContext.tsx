@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import uuid from 'react-native-uuid';
 import { BossRecord, Character, ExportedData } from "../types/types";
 
@@ -7,6 +7,7 @@ import { BossRecord, Character, ExportedData } from "../types/types";
 interface CharacterContextType{
     /* 캐릭터 데이터 */
     characters: Character[];
+    characterMap: Map<string, Character>; // key: Character.id, value: Character
     selectedCharacter: Character | null;
     setSelectedCharacter: React.Dispatch<React.SetStateAction<Character | null>>;
     
@@ -75,6 +76,12 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         };
         loadInitialStorageData();
     }, []);
+
+    const characterMap = useMemo(()=>{
+        return new Map<string, Character>(
+            characters.map((c)=>[c.id, c])
+        );
+    }, [characters]);
 
     const createCharacter = (chracterName: string): Character=>{
         return {
@@ -145,9 +152,9 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(filteredChracters));
 
         // 연관 보스 클리어 기록 삭제
-        setTempRecords(prev=>prev.filter(record=>record.characterName !== name));
+        setTempRecords(prev=>prev.filter(record=>record.characterId !== id));
         // 히스토리/통계에 사용되는 영속성 데이터 내에서도 해당 캐릭터 기록 일괄 삭제
-        const filteredPersistentRecords = persistentRecords.filter(record=>record.characterName !== name);
+        const filteredPersistentRecords = persistentRecords.filter(record=>record.characterId !== id);
         setPersistentRecords(filteredPersistentRecords);
         await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(filteredPersistentRecords));
 
@@ -182,15 +189,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         setCharacters(updatedChars);
         await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(updatedChars));
 
-        // 연관된 보스 클리어 기록의 캐릭터 이름도 함께 동기화 업데이트
-        setTempRecords(prev => prev.map(record => record.characterName === oldName ? {...record, characterName: trimmedName} : record));
-
-        // 통계/히스토리용 영속성 기록 내 캐릭터 이름도 일괄 동기화 및 스토리지 업데이트
-        const updatedPersistentRecords = persistentRecords.map(record => record.characterName === oldName ? {...record, characterName: trimmedName} : record);
-        setPersistentRecords(updatedPersistentRecords);
-        await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updatedPersistentRecords));
-
-        // 현재 선택된 캐리겉의 이름이 바뀐 경우 상태 동기화
+        // 현재 선택된 캐릭터의 이름이 바뀐 경우 상태 동기화
         if(selectedCharacter?.id === id){
             setSelectedCharacter({
                 ...selectedCharacter,
@@ -239,7 +238,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             let importedCount = 0;
             // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
             exportedData.persistentRecords.forEach(r=>{
-                if(r.id && r.bossName && r.characterName){
+                if(r.id && r.bossName && r.characterId){
                     recordMap.set(r.id, r);
                     importedCount++;
                 }
@@ -271,6 +270,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     return (
         <CharacterContext.Provider value={{
             characters,
+            characterMap,
             selectedCharacter,
             setSelectedCharacter,
             tempRecords,
