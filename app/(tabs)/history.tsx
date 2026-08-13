@@ -1,4 +1,5 @@
 import { useCharacter } from "@/src/context/CharacterContext";
+import { formatDate } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
@@ -31,17 +32,6 @@ export default function CharacterHistoryScreen(){
     };
 
     const handleExportJSON = async ()=>{
-        // 내보낼 데이터가 없는 경우 경고 메시지 출력
-        if(persistentRecords.length === 0){
-            const message = "내보낼 보스 클리어 기록이 없습니다.";
-            if(Platform.OS === 'web'){
-                alert(message);
-            }else{
-                Alert.alert("알림", message);
-            }
-            return;
-        }
-
         const exportData = {
             version: "1.0",
             exportedAt: new Date().toISOString(),
@@ -51,7 +41,7 @@ export default function CharacterHistoryScreen(){
     
         // JSON 문자열로 변환
         const jsonData = JSON.stringify(exportData, null, 2);
-        const filename = `maple_stopwatch_data_${new Date().toISOString().split('T')[0]}.json`;
+        const filename = `maple_stopwatch_data_${formatDate(new Date())}.json`;
 
         // 플랫폼별 내보내기 분기 처리
         if(Platform.OS === 'web'){
