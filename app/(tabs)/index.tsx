@@ -39,7 +39,6 @@ export default function StopwatchScreen() {
   const [manualMinutes, setManualMinutes] = useState<string>('');
   const [manualSeconds, setManualSeconds] = useState<string>('');
   const [manualDate, setManualDate] = useState<Date>(new Date());
-  
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){
@@ -60,6 +59,7 @@ export default function StopwatchScreen() {
       difficulty: selectedBossDifficulty,
       clearTime: formatTime(elapsedSeconds),
       clearTimeSec: elapsedSeconds,
+      clearDate: formatDate(manualDate),
       createdAt: new Date()
     };
 
@@ -111,7 +111,8 @@ export default function StopwatchScreen() {
       difficulty: selectedBossDifficulty,
       clearTime: formatTime(totalSeconds),
       clearTimeSec: totalSeconds,
-      createdAt: new Date(manualDate)
+      clearDate: formatDate(manualDate),
+      createdAt: new Date()
     };
 
     setTempRecords((prevRecords)=>[newRecord, ...prevRecords ]);
@@ -275,7 +276,7 @@ export default function StopwatchScreen() {
                   <DataTable.Cell style={{flex: 1.2}}>{item.characterName}</DataTable.Cell>
                   <DataTable.Cell style={{flex: 2}}>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
                   <DataTable.Cell numeric style={{flex: 1.2}}>{item.clearTime}</DataTable.Cell>
-                  <DataTable.Cell numeric style={{flex: 1.5}}>{formatDate(item.createdAt)}</DataTable.Cell>
+                  <DataTable.Cell numeric style={{flex: 1.5}}>{item.clearDate}</DataTable.Cell>
                   <DataTable.Cell numeric style={styles.deleteCell}>
                     <IconButton
                       icon="delete-outline"

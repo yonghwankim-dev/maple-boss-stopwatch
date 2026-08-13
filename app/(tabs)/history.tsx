@@ -214,7 +214,7 @@ export default function CharacterHistoryScreen(){
                                 <List.Item
                                     title={`${item.bossName} (${item.difficulty})`}
                                     titleStyle={styles.bossTitle}
-                                    description={`⏱️ 클리어 시간: ${item.clearTime}  |  📅 날짜: ${item.createdAt}`}
+                                    description={`⏱️ 클리어 시간: ${item.clearTime}  |  📅 날짜: ${item.clearDate}`}
                                     descriptionStyle={styles.bossDescription}
                                     right={(props)=>{
                                         return <IconButton
