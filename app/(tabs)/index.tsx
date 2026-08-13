@@ -9,7 +9,7 @@ import { useBoss } from '@/src/context/BossContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
-import { formatDate, formatTime, getTodayDate } from '@/src/utils/timeFormatter';
+import { formatDate, formatTime } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
 import uuid from 'react-native-uuid';
 
@@ -38,7 +38,7 @@ export default function StopwatchScreen() {
   // 직접 입력 폼 전용 상태 관리
   const [manualMinutes, setManualMinutes] = useState<string>('');
   const [manualSeconds, setManualSeconds] = useState<string>('');
-  const [manualDate, setManualDate] = useState<string>(getTodayDate());
+  const [manualDate, setManualDate] = useState<Date>(new Date());
   
 
   const handleComplete = async ()=>{
@@ -239,14 +239,10 @@ export default function StopwatchScreen() {
                 />
               </View>
 
-              <ClearDatePicker/>
-              {/* <TextInput
-                label="클리어 날짜 (YYYY-MM-DD)"
-                value={manualDate}
-                onChangeText={setManualDate}
-                mode='outlined'
-                placeholder='1900-01-01'
-              /> */}
+              <ClearDatePicker
+                date={manualDate}
+                setDate={setManualDate}
+              />
               <Divider style={{marginVertical: 4}}/>
               <Button
                 mode='contained'
