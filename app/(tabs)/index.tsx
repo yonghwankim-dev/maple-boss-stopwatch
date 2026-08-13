@@ -2,6 +2,7 @@ import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
 
 import { BossSelectorCard } from '@/components/BossSelectorCard';
+import { ClearDatePicker } from '@/components/ClearDatePicker';
 import { View } from '@/components/Themed';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useBoss } from '@/src/context/BossContext';
@@ -238,13 +239,14 @@ export default function StopwatchScreen() {
                 />
               </View>
 
-              <TextInput
+              <ClearDatePicker/>
+              {/* <TextInput
                 label="클리어 날짜 (YYYY-MM-DD)"
                 value={manualDate}
                 onChangeText={setManualDate}
                 mode='outlined'
                 placeholder='1900-01-01'
-              />
+              /> */}
               <Divider style={{marginVertical: 4}}/>
               <Button
                 mode='contained'
