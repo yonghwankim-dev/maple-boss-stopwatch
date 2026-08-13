@@ -2,14 +2,16 @@ import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
 
 import { BossSelectorCard } from '@/components/BossSelectorCard';
+import { ClearDatePicker } from '@/components/ClearDatePicker';
 import { View } from '@/components/Themed';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useBoss } from '@/src/context/BossContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord } from '@/src/types/boss';
-import { formatTime, getTodayDate } from '@/src/utils/timeFormatter';
+import { formatDate, formatTime } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
+import uuid from 'react-native-uuid';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
@@ -36,8 +38,7 @@ export default function StopwatchScreen() {
   // 직접 입력 폼 전용 상태 관리
   const [manualMinutes, setManualMinutes] = useState<string>('');
   const [manualSeconds, setManualSeconds] = useState<string>('');
-  const [manualDate, setManualDate] = useState<string>(getTodayDate());
-  
+  const [manualDate, setManualDate] = useState<Date>(new Date());
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){
@@ -52,14 +53,14 @@ export default function StopwatchScreen() {
     const elapsedSeconds = complete();
 
     const newRecord: BossRecord = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: uuid.v4(),
       characterName: selectedCharacter.name,
       bossName: selectedBossName,
       difficulty: selectedBossDifficulty,
       clearTime: formatTime(elapsedSeconds),
       clearTimeSec: elapsedSeconds,
-      // 출력 형식: YYYY-MM-DD
-      createdAt: getTodayDate()
+      clearDate: formatDate(manualDate),
+      createdAt: new Date()
     };
 
     setTempRecords((prevRecords)=>[newRecord, ...prevRecords]);
@@ -102,27 +103,16 @@ export default function StopwatchScreen() {
       return;
     }
 
-    // YYYY-MM-DD 정규식 검증
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if(!dateRegex.test(manualDate)){
-      const message = "날짜 형식을 YYYY-MM-DD에 맞게 입력해주세요.";
-      if(Platform.OS === 'web'){
-        alert(message);
-      }else{
-        Alert.alert("입력 오류", message);
-      }
-      return;
-    }
-
     const totalSeconds = mins * 60 + secs;
     const newRecord: BossRecord = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: uuid.v4(),
       characterName: selectedCharacter.name,
       bossName: selectedBossName,
       difficulty: selectedBossDifficulty,
       clearTime: formatTime(totalSeconds),
       clearTimeSec: totalSeconds,
-      createdAt: manualDate
+      clearDate: formatDate(manualDate),
+      createdAt: new Date()
     };
 
     setTempRecords((prevRecords)=>[newRecord, ...prevRecords ]);
@@ -249,12 +239,10 @@ export default function StopwatchScreen() {
                   placeholder='00'
                 />
               </View>
-              <TextInput
-                label="클리어 날짜 (YYYY-MM-DD)"
-                value={manualDate}
-                onChangeText={setManualDate}
-                mode='outlined'
-                placeholder='1900-01-01'
+
+              <ClearDatePicker
+                date={manualDate}
+                setDate={setManualDate}
               />
               <Divider style={{marginVertical: 4}}/>
               <Button
@@ -288,7 +276,7 @@ export default function StopwatchScreen() {
                   <DataTable.Cell style={{flex: 1.2}}>{item.characterName}</DataTable.Cell>
                   <DataTable.Cell style={{flex: 2}}>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
                   <DataTable.Cell numeric style={{flex: 1.2}}>{item.clearTime}</DataTable.Cell>
-                  <DataTable.Cell numeric style={{flex: 1.5}}>{item.createdAt}</DataTable.Cell>
+                  <DataTable.Cell numeric style={{flex: 1.5}}>{item.clearDate}</DataTable.Cell>
                   <DataTable.Cell numeric style={styles.deleteCell}>
                     <IconButton
                       icon="delete-outline"

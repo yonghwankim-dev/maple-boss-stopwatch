@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { BossRecord, Character } from "../types/boss";
+import uuid from 'react-native-uuid';
+import { BossRecord, Character, ExportedData } from "../types/boss";
 
 
 interface CharacterContextType{
@@ -23,22 +24,20 @@ interface CharacterContextType{
     deleteCharacter: (id: string, name: string) => Promise<void>;
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
 
-    /* JSON 데이터 기반 보스 클리어 기록 가져오기 */
-    importPersistentRecords: (records: BossRecord[]) => Promise<{success: boolean; count: number; error?: string}>;
+    /* JSON 데이터 기반 캐릭터 및 보스 클리어 기록 가져오기 */
+    importPersistentRecords: (exportedData: ExportedData) => Promise<{success: boolean; count: number; error?: string}>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
 
 const CHARACTERS_STORAGE_KEY = '@boss_clear_characters_list';
 const RECORD_STORAGE_KEY = '@boss_clear_persistent_records';
-const BOSS_DIFF_MAP_KEY = '@boss_difficulty_memorize_map';
 
 export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
     const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
-    const [bossDifficultyMap, setBossDifficultyMap] = useState<Record<string, string>>({});
     
     // 앱 구동시 로컬 저장소에서 영속 데이터 로드
     useEffect(()=>{
@@ -53,7 +52,8 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                     setCharacters(currentChars);
                 }else{
                     // 최초 실행시 기본 캐릭터 세팅 및 저장
-                    const defaultChars: Character[] = [{id: '1', name: '캐릭터1'}];
+                    const defaultCharacter = createCharacter("캐릭터1");
+                    const defaultChars: Character[] = [defaultCharacter];
                     currentChars = defaultChars;
                     setCharacters(defaultChars);
                     await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(defaultChars));
@@ -69,12 +69,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 if(storedData){
                     setPersistentRecords(JSON.parse(storedData));
                 }
-
-                // 3. 보스별 최근 난이도 선택 맵 로드
-                const storedMap = await AsyncStorage.getItem(BOSS_DIFF_MAP_KEY);
-                if(storedMap){
-                    setBossDifficultyMap(JSON.parse(storedMap));
-                }
             }catch(error){
                 console.error("Failed to load records from AsyncStorage", error);
             }
@@ -82,14 +76,20 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         loadInitialStorageData();
     }, []);
 
+    const createCharacter = (chracterName: string): Character=>{
+        return {
+            id: uuid.v4(),
+            name: chracterName,
+            createdAt: new Date()
+        };
+    }
+
     // 영속 데이터 추가
     const saveToPersistent = async (record: BossRecord)=>{
         try{
             const updated = [record, ...persistentRecords];
             setPersistentRecords(updated);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
-
-            // TODO: 추후 Firebase Firestore 연동시 여기에 추가
         }catch(error){
             console.error("Failed to save record persistently", error);
         }
@@ -122,10 +122,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             };
         }
 
-        const newChar: Character = {
-            id: Math.random().toString(32).substring(2, 9),
-            name: trimmedName
-        };
+        const newChar: Character = createCharacter(trimmedName);
 
         const updatedChars = [...characters, newChar];
         setCharacters(updatedChars);
@@ -195,7 +192,10 @@ export function CharacterProvider({ children }: { children: ReactNode }){
 
         // 현재 선택된 캐리겉의 이름이 바뀐 경우 상태 동기화
         if(selectedCharacter?.id === id){
-            setSelectedCharacter({id, name: trimmedName});
+            setSelectedCharacter({
+                ...selectedCharacter,
+                name: trimmedName
+            });
         }
         
         return {
@@ -204,17 +204,30 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     }
 
     // 보스 기록 가져오기
-    const importPersistentRecords = async (incomingRecords: BossRecord[])=>{
+    const importPersistentRecords = async (exportedData: ExportedData)=>{
         try{
-            // 데이터 무결성 검증 (배열 형태 확인)
-            if(!Array.isArray(incomingRecords)){
-                return {
-                    success: false,
-                    count: 0,
-                    error: "올바른 JSON 데이터 형식이 아닙니다. (배열이 아님)"
-                };
-            }
+            // 캐릭터 배열 상태에 병합
+            const mergedCharacterMap = new Map<string, Character>();
+            // 기존 캐릭터 배열의 캐릭터들을 맵에 추가
+            characters.forEach(c=>{
+                if(c.id){
+                    mergedCharacterMap.set(c.id, c);
+                }
+            })
+            exportedData.characters.forEach(c=>{
+                if(c.id){
+                    mergedCharacterMap.set(c.id, c);
+                }
+            });
             
+            // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
+            const mergedCharacterArray = Array.from(mergedCharacterMap.values());
+            setCharacters(mergedCharacterArray);
+            // 캐릭터 선택을 제일 배열의 0번째 캐릭터로 선택
+            setSelectedCharacter(mergedCharacterArray[0]);
+            // 캐릭터 정보들을 로컬 스토리지에 병합
+            await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));
+
             // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
             const recordMap = new Map<string, BossRecord>();
             persistentRecords.forEach(r=>{
@@ -225,9 +238,9 @@ export function CharacterProvider({ children }: { children: ReactNode }){
 
             let importedCount = 0;
             // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
-            incomingRecords.forEach(incoming=>{
-                if(incoming.id && incoming.bossName && incoming.characterName){
-                    recordMap.set(incoming.id, incoming);
+            exportedData.persistentRecords.forEach(r=>{
+                if(r.id && r.bossName && r.characterName){
+                    recordMap.set(r.id, r);
                     importedCount++;
                 }
             });
@@ -238,6 +251,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             // 상태 업데이트 및 스토리지 영속화
             setPersistentRecords(mergedRecords);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
+
             // success, count json 데이터 리턴
             return {
                 success: true,

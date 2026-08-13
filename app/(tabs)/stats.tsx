@@ -80,7 +80,7 @@ export default function StatsScreen(){
 
         filtered.forEach(record=>{
             // X축 레이블과 동일하게 일자 포맷을 추출하여 key로 사용 (예: "06-06")
-            const dateKey = formatXAxisLabel(record.createdAt);
+            const dateKey = formatXAxisLabel(record.clearDate);
 
             if(!dailyBestMap[dateKey]){
                 dailyBestMap[dateKey] = record;
@@ -93,7 +93,7 @@ export default function StatsScreen(){
         });
 
         return Object.values(dailyBestMap)
-            .sort((a,b)=> new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
+            .sort((a,b)=> new Date(a.clearDate).getTime() - new Date(b.clearDate).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
             .slice(-5); // 최근 5개만
     }, [persistentRecords, selectedCharName, selectedBossName, selectedBossDifficulty]);
 
@@ -142,7 +142,7 @@ export default function StatsScreen(){
         
         return {
             data: {
-                labels: filteredRecords.map(r=>formatXAxisLabel(r.createdAt)),
+                labels: filteredRecords.map(r=>formatXAxisLabel(r.clearDate)),
                 datasets: [
                     {
                         data: minutesData,
@@ -287,7 +287,7 @@ export default function StatsScreen(){
                                         />
                                         <View style={styles.recordContainer}>
                                             <Text style={styles.bestTime}>{formatTime(item.record.clearTimeSec)}</Text>
-                                            <Text style={styles.bestCreatedAt}>{item.record.createdAt}</Text>
+                                            <Text style={styles.bestCreatedAt}>{item.record.clearDate}</Text>
                                         </View>
                                         
                                     </View>

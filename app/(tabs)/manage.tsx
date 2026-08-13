@@ -26,9 +26,9 @@ export default function ManageCharactersScreen(){
             }
         }else{
             if(Platform.OS === 'web'){
-                alert("캐릭터 등록에 실패하였습니다.");
+                alert("캐릭터 등록에 실패하였습니다. " + result.error);
             }else{
-                Alert.alert("경고", result.error);
+                Alert.alert("경고: ", result.error);
             }
             return;
         }
