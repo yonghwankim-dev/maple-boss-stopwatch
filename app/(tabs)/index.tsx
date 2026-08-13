@@ -8,7 +8,7 @@ import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useBoss } from '@/src/context/BossContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
-import { BossRecord } from '@/src/types/boss';
+import { BossRecord } from '@/src/types/types';
 import { formatDate, formatTime } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
 import uuid from 'react-native-uuid';

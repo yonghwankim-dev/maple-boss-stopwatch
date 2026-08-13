@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import uuid from 'react-native-uuid';
-import { BossRecord, Character, ExportedData } from "../types/boss";
+import { BossRecord, Character, ExportedData } from "../types/types";
 
 
 interface CharacterContextType{
