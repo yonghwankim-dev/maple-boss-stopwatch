@@ -131,7 +131,8 @@ export default function ManageCharactersScreen(){
                                         // 일반 모드: 캐릭터 이름 및 [편집], [삭제] 버튼 표시
                                         <>
                                             <List.Item
-                                                title={char.name}
+                                                title={`${index + 1}. ${char.name}`}
+                                                description={`id: ${char.id ? char.id.slice(-4) : ''}`}
                                                 titleStyle={styles.charTitle}
                                                 style={styles.listItem}
                                             />

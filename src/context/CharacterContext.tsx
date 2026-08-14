@@ -123,13 +123,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 error: "캐릭터 이름을 입력해주세요."
             };
         }
-        if(characters.some(char => char.name === trimmedName)){
-            return {
-                success: false,
-                error: "이미 등록된 캐릭터 이름입니다."
-            };
-        }
-
+        
         const newChar: Character = createCharacter(trimmedName);
 
         const updatedChars = [...characters, newChar];
