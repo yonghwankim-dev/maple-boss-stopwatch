@@ -19,7 +19,7 @@ interface CharacterContextType{
     /* 보스 클리어 기록 데이터 관리 기능 */
     bossRecords: BossRecord[]; // 통계 및 히스토리 전용 영속적 데이터
     saveBossRecord: (record: BossRecord) => Promise<void>;
-    deleteFromPersistent: (id: string) => Promise<void>;
+    deleteBossRecord: (id: string) => Promise<void>;
 
     /* 캐릭터 관리 기능 */
     addCharacter: (name: string) => Promise<{ success: boolean; error?: string }>;
@@ -104,7 +104,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     };
 
     // 영속 데이터 삭제
-    const deleteFromPersistent = async (id: string)=>{
+    const deleteBossRecord = async (id: string): Promise<void>=>{
         try{
             const updated = bossRecords.filter(r=>r.id !== id);
             setBossRecords(updated);
@@ -293,11 +293,11 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             tempRecords,
             setTempRecords,
             bossRecords,
+            saveBossRecord,
+            deleteBossRecord,
             addCharacter,
             deleteCharacter,
             updateChracter,
-            saveBossRecord,
-            deleteFromPersistent,
             importMapleData
         }}>
             {children}

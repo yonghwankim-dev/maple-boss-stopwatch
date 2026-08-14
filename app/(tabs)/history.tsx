@@ -5,7 +5,7 @@ import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, selectedCharacter, setSelectedCharacter, bossRecords, deleteFromPersistent, importMapleData} = useCharacter();
+    const {characters, selectedCharacter, setSelectedCharacter, bossRecords, deleteBossRecord, importMapleData} = useCharacter();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
     // 숨겨진 HTML file input에 접근하기 위한 ref 선언
@@ -28,7 +28,8 @@ export default function CharacterHistoryScreen(){
     }, [bossRecords, selectedCharacter]);
 
     const handleDeleteRecord = async (id: string)=>{
-        await deleteFromPersistent(id);
+        console.log("deleteBossRecord : ", deleteBossRecord);
+        deleteBossRecord(id);
     };
 
     const handleExportJSON = async ()=>{
