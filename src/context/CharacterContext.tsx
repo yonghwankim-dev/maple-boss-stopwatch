@@ -27,7 +27,7 @@ interface CharacterContextType{
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
 
     /* JSON 데이터 기반 캐릭터 및 보스 클리어 기록 가져오기 */
-    importPersistentRecords: (exportedData: ExportedData) => Promise<{success: boolean; count: number; error?: string}>;
+    importPersistentRecords: (exportedData: ExportedData) => Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
@@ -203,65 +203,76 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     }
 
+    const importBossRecords = async (exportedData: ExportedData): Promise<number> =>{
+        // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
+        const recordMap = new Map<string, BossRecord>();
+        persistentRecords.forEach(r=>{
+            if(r.id){
+                recordMap.set(r.id, r);
+            }
+        });
+
+        let importedCount = 0;
+        // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
+        exportedData.persistentRecords.forEach(r=>{
+            if(r.id && r.bossName && r.characterId){
+                recordMap.set(r.id, r);
+                importedCount++;
+            }
+        });
+
+        // Map을 다시 배열로 변환하고 최신 날짜 순(createdAt 내림차순)으로 정렬
+        const mergedRecords = Array.from(recordMap.values())
+                                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // 상태 업데이트 및 스토리지 영속화
+        setPersistentRecords(mergedRecords);
+        await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
+        return importedCount;
+    }
+
+    const importCharacters = async (exportedData: ExportedData): Promise<number> => {
+        // 캐릭터 배열 상태에 병합
+        const mergedCharacterMap = new Map<string, Character>();
+        // 기존 캐릭터 배열의 캐릭터들을 맵에 추가
+        characters.forEach(c=>{
+            if(c.id){
+                mergedCharacterMap.set(c.id, c);
+            }
+        })
+        exportedData.characters.forEach(c=>{
+            if(c.id){
+                mergedCharacterMap.set(c.id, c);
+            }
+        });
+        
+        // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
+        const mergedCharacterArray = Array.from(mergedCharacterMap.values());
+        setCharacters(mergedCharacterArray);
+        // 캐릭터 선택을 제일 배열의 0번째 캐릭터로 선택
+        setSelectedCharacter(mergedCharacterArray[0]);
+        // 캐릭터 정보들을 로컬 스토리지에 병합
+        await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));
+        return exportedData.characters.filter((c)=>!!c.id).length;
+    }
+
     // 보스 기록 가져오기
-    const importPersistentRecords = async (exportedData: ExportedData)=>{
+    const importPersistentRecords = async (exportedData: ExportedData): Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>=>{
         try{
-            // 캐릭터 배열 상태에 병합
-            const mergedCharacterMap = new Map<string, Character>();
-            // 기존 캐릭터 배열의 캐릭터들을 맵에 추가
-            characters.forEach(c=>{
-                if(c.id){
-                    mergedCharacterMap.set(c.id, c);
-                }
-            })
-            exportedData.characters.forEach(c=>{
-                if(c.id){
-                    mergedCharacterMap.set(c.id, c);
-                }
-            });
-            
-            // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
-            const mergedCharacterArray = Array.from(mergedCharacterMap.values());
-            setCharacters(mergedCharacterArray);
-            // 캐릭터 선택을 제일 배열의 0번째 캐릭터로 선택
-            setSelectedCharacter(mergedCharacterArray[0]);
-            // 캐릭터 정보들을 로컬 스토리지에 병합
-            await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));
-
-            // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
-            const recordMap = new Map<string, BossRecord>();
-            persistentRecords.forEach(r=>{
-                if(r.id){
-                    recordMap.set(r.id, r);
-                }
-            });
-
-            let importedCount = 0;
-            // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
-            exportedData.persistentRecords.forEach(r=>{
-                if(r.id && r.bossName && r.characterId){
-                    recordMap.set(r.id, r);
-                    importedCount++;
-                }
-            });
-
-            // Map을 다시 배열로 변환하고 최신 날짜 순(createdAt 내림차순)으로 정렬
-            const mergedRecords = Array.from(recordMap.values())
-                                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            // 상태 업데이트 및 스토리지 영속화
-            setPersistentRecords(mergedRecords);
-            await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
+            const importedCharacterCount = await importCharacters(exportedData);
+            const importedBossCount = await importBossRecords(exportedData);
 
             // success, count json 데이터 리턴
             return {
                 success: true,
-                count: importedCount
+                importedCharacterCount: importedCharacterCount,
+                importedBossCount: importedBossCount
             };
         }catch(error){
             console.error("Failed to import persistent records", error);
             return {
                 success: false,
-                count : 0,
+                importedCharacterCount: 0,
+                importedBossCount : 0,
                 error : "데이터 동기화 중 오류가 발생했습니다."
             };
         }

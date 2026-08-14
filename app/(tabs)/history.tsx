@@ -81,10 +81,8 @@ export default function CharacterHistoryScreen(){
                 const result = await importPersistentRecords(parsedData);
 
                 if(result.success){
-                    alert(`성공적으로 데이터를 가져왔습니다!\n총 ${result.count}개의 기록이 병합/업데이트 되었습니다.`);
-
-                    // todo: 사용자 컨텍스트의 chracters 및 보스 기록 상태 동기화
-
+                    alert(`성공적으로 데이터를 가져왔습니다!\n총 캐릭터: ${result.importedCharacterCount}개, 총 보스 기록: ${result.importedBossCount}개의 기록이 병합/업데이트 되었습니다.`);
+                    
                     // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
                     if(characters.length > 0 && !selectedCharacter){
                         setSelectedCharacter(characters[0]);
