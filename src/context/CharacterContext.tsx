@@ -1,47 +1,36 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import uuid from 'react-native-uuid';
-import { BossRecord, Character, ExportedData } from "../types/boss";
+import { Character, ExportedData } from "../types/types";
 
 
 interface CharacterContextType{
     /* 캐릭터 데이터 */
     characters: Character[];
+    characterMap: Map<string, Character>; // key: Character.id, value: Character
     selectedCharacter: Character | null;
     setSelectedCharacter: React.Dispatch<React.SetStateAction<Character | null>>;
     
-    /* 보스 클리어 기록 데이터 */
-    tempRecords: BossRecord[]; // 스톱워치 화면 전용 임시 데이터
-    setTempRecords: React.Dispatch<React.SetStateAction<BossRecord[]>>;
-    
-    /* 보스 클리어 기록 데이터 관리 기능 */
-    persistentRecords: BossRecord[]; // 통계 및 히스토리 전용 영속적 데이터
-    saveToPersistent: (record: BossRecord) => Promise<void>;
-    deleteFromPersistent: (id: string) => Promise<void>;
-
     /* 캐릭터 관리 기능 */
     addCharacter: (name: string) => Promise<{ success: boolean; error?: string }>;
-    deleteCharacter: (id: string, name: string) => Promise<void>;
+    deleteCharacterOnly: (id: string, name: string) => Promise<void>;
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
 
     /* JSON 데이터 기반 캐릭터 및 보스 클리어 기록 가져오기 */
-    importPersistentRecords: (exportedData: ExportedData) => Promise<{success: boolean; count: number; error?: string}>;
+    importCharacters: (exportedData: ExportedData) => Promise<number>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
 
 const CHARACTERS_STORAGE_KEY = '@boss_clear_characters_list';
-const RECORD_STORAGE_KEY = '@boss_clear_persistent_records';
 
 export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
-    const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
-    const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
     
     // 앱 구동시 로컬 저장소에서 영속 데이터 로드
     useEffect(()=>{
-        const loadInitialStorageData = async ()=>{
+        const loadInitialCharacters = async ()=>{
             try{
                 // 1. 캐릭터 로드
                 const storedChars = await AsyncStorage.getItem(CHARACTERS_STORAGE_KEY);
@@ -63,18 +52,18 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 if(currentChars.length > 0){
                     setSelectedCharacter(currentChars[0]);
                 }
-
-                // 2. 보스 클리어 기록 로드
-                const storedData = await AsyncStorage.getItem(RECORD_STORAGE_KEY);
-                if(storedData){
-                    setPersistentRecords(JSON.parse(storedData));
-                }
             }catch(error){
                 console.error("Failed to load records from AsyncStorage", error);
             }
         };
-        loadInitialStorageData();
+        loadInitialCharacters();
     }, []);
+
+    const characterMap = useMemo(()=>{
+        return new Map<string, Character>(
+            characters.map((c)=>[c.id, c])
+        );
+    }, [characters]);
 
     const createCharacter = (chracterName: string): Character=>{
         return {
@@ -84,28 +73,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         };
     }
 
-    // 영속 데이터 추가
-    const saveToPersistent = async (record: BossRecord)=>{
-        try{
-            const updated = [record, ...persistentRecords];
-            setPersistentRecords(updated);
-            await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
-        }catch(error){
-            console.error("Failed to save record persistently", error);
-        }
-    };
-
-    // 영속 데이터 삭제
-    const deleteFromPersistent = async (id: string)=>{
-        try{
-            const updated = persistentRecords.filter(r=>r.id !== id);
-            setPersistentRecords(updated);
-            await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
-        }catch(error){
-            console.error("Failed to delete persistent record", error);
-        }
-    };
-    
     // 캐릭터 추가 공통 로직
     const addCharacter = async (name: string)=>{
         const trimmedName = name.trim();
@@ -113,12 +80,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             return {
                 success: false,
                 error: "캐릭터 이름을 입력해주세요."
-            };
-        }
-        if(characters.some(char => char.name === trimmedName)){
-            return {
-                success: false,
-                error: "이미 등록된 캐릭터 이름입니다."
             };
         }
 
@@ -137,19 +98,12 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     }
 
     // 캐릭터 삭제 공통 로직
-    const deleteCharacter = async (id: string, name: string) => {
+    const deleteCharacterOnly = async (id: string, name: string) => {
         const filteredChracters = characters.filter(char => char.id !== id);
         setCharacters(filteredChracters);
 
         // 로컬 스토리지 실시간 동기화
         await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(filteredChracters));
-
-        // 연관 보스 클리어 기록 삭제
-        setTempRecords(prev=>prev.filter(record=>record.characterName !== name));
-        // 히스토리/통계에 사용되는 영속성 데이터 내에서도 해당 캐릭터 기록 일괄 삭제
-        const filteredPersistentRecords = persistentRecords.filter(record=>record.characterName !== name);
-        setPersistentRecords(filteredPersistentRecords);
-        await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(filteredPersistentRecords));
 
         // 선택된 캐릭터 예외 처리
         if(selectedCharacter?.id === id){
@@ -182,15 +136,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         setCharacters(updatedChars);
         await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(updatedChars));
 
-        // 연관된 보스 클리어 기록의 캐릭터 이름도 함께 동기화 업데이트
-        setTempRecords(prev => prev.map(record => record.characterName === oldName ? {...record, characterName: trimmedName} : record));
-
-        // 통계/히스토리용 영속성 기록 내 캐릭터 이름도 일괄 동기화 및 스토리지 업데이트
-        const updatedPersistentRecords = persistentRecords.map(record => record.characterName === oldName ? {...record, characterName: trimmedName} : record);
-        setPersistentRecords(updatedPersistentRecords);
-        await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updatedPersistentRecords));
-
-        // 현재 선택된 캐리겉의 이름이 바뀐 경우 상태 동기화
+        // 현재 선택된 캐릭터의 이름이 바뀐 경우 상태 동기화
         if(selectedCharacter?.id === id){
             setSelectedCharacter({
                 ...selectedCharacter,
@@ -203,85 +149,51 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     }
 
-    // 보스 기록 가져오기
-    const importPersistentRecords = async (exportedData: ExportedData)=>{
-        try{
-            // 캐릭터 배열 상태에 병합
-            const mergedCharacterMap = new Map<string, Character>();
-            // 기존 캐릭터 배열의 캐릭터들을 맵에 추가
-            characters.forEach(c=>{
-                if(c.id){
-                    mergedCharacterMap.set(c.id, c);
-                }
-            })
-            exportedData.characters.forEach(c=>{
-                if(c.id){
-                    mergedCharacterMap.set(c.id, c);
-                }
-            });
-            
-            // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
-            const mergedCharacterArray = Array.from(mergedCharacterMap.values());
-            setCharacters(mergedCharacterArray);
-            // 캐릭터 선택을 제일 배열의 0번째 캐릭터로 선택
-            setSelectedCharacter(mergedCharacterArray[0]);
-            // 캐릭터 정보들을 로컬 스토리지에 병합
-            await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));
+    const importCharacters = async (exportedData: ExportedData): Promise<number> => {
+        const map = new Map<string, Character>();
 
-            // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
-            const recordMap = new Map<string, BossRecord>();
-            persistentRecords.forEach(r=>{
-                if(r.id){
-                    recordMap.set(r.id, r);
-                }
-            });
+        // 기존 캐릭터 맵에 추가하기
+        characters.forEach((c)=>{
+            if(c.id){
+               map.set(c.id, c); 
+            }
+        });
 
-            let importedCount = 0;
-            // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
-            exportedData.persistentRecords.forEach(r=>{
-                if(r.id && r.bossName && r.characterName){
-                    recordMap.set(r.id, r);
-                    importedCount++;
-                }
-            });
+        // 가져오는 캐릭터를 맵에 추가하기
+        exportedData.characters.forEach((c)=>{
+            if(c.id){
+                map.set(c.id, c);
+            }
+        });
 
-            // Map을 다시 배열로 변환하고 최신 날짜 순(createdAt 내림차순)으로 정렬
-            const mergedRecords = Array.from(recordMap.values())
-                                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            // 상태 업데이트 및 스토리지 영속화
-            setPersistentRecords(mergedRecords);
-            await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
 
-            // success, count json 데이터 리턴
-            return {
-                success: true,
-                count: importedCount
-            };
-        }catch(error){
-            console.error("Failed to import persistent records", error);
-            return {
-                success: false,
-                count : 0,
-                error : "데이터 동기화 중 오류가 발생했습니다."
-            };
+        // 병하된 결과를 배열로 변환
+        const totalCharacters = Array.from(map.values());
+        setCharacters(totalCharacters);
+
+        // 기존에 선택된 캐릭터가 덮어씌워졌다면, 최신 객체로 업데이트하고
+        // 선택된 캐릭터가 없거나 삭제되었다면 0번째 캐릭터로 설정
+        if(selectedCharacter && map.has(selectedCharacter.id)){
+            setSelectedCharacter(map.get(selectedCharacter.id)!);
+        }else if(totalCharacters.length > 0){
+            setSelectedCharacter(totalCharacters[0]);
         }
-        
-    };
+
+        // 로컬 스토리지에 저장
+        await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(totalCharacters));
+        return exportedData.characters.filter((c)=>!!c.id).length;
+    }
 
     return (
         <CharacterContext.Provider value={{
             characters,
+            characterMap,
             selectedCharacter,
             setSelectedCharacter,
-            tempRecords,
-            setTempRecords,
-            persistentRecords,
             addCharacter,
-            deleteCharacter,
+            deleteCharacterOnly,
             updateChracter,
-            saveToPersistent,
-            deleteFromPersistent,
-            importPersistentRecords
+            importCharacters
         }}>
             {children}
         </CharacterContext.Provider>

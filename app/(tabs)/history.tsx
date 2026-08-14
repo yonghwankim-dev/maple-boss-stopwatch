@@ -1,10 +1,15 @@
+import { useBossRecord } from "@/src/context/BossRecordContext";
 import { useCharacter } from "@/src/context/CharacterContext";
+import { useImportMapleData } from "@/src/hooks/useImportMapleData";
+import { formatDate, formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, selectedCharacter, setSelectedCharacter, persistentRecords, deleteFromPersistent, importPersistentRecords} = useCharacter();
+    const { characters, selectedCharacter, setSelectedCharacter } = useCharacter();
+    const { bossRecords, deleteBossRecord } = useBossRecord();
+    const { importMapleData } = useImportMapleData();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
     // 숨겨진 HTML file input에 접근하기 위한 ref 선언
@@ -21,37 +26,27 @@ export default function CharacterHistoryScreen(){
         if(!selectedCharacter){
             return [];
         }
-        return persistentRecords
-            .filter((record)=>record.characterName === selectedCharacter.name)
+        return bossRecords
+            .filter((record)=>record.characterId === selectedCharacter.id)
             .sort((a,b)=>new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [persistentRecords, selectedCharacter]);
+    }, [bossRecords, selectedCharacter]);
 
     const handleDeleteRecord = async (id: string)=>{
-        await deleteFromPersistent(id);
+        console.log("deleteBossRecord : ", deleteBossRecord);
+        deleteBossRecord(id);
     };
 
     const handleExportJSON = async ()=>{
-        // 내보낼 데이터가 없는 경우 경고 메시지 출력
-        if(persistentRecords.length === 0){
-            const message = "내보낼 보스 클리어 기록이 없습니다.";
-            if(Platform.OS === 'web'){
-                alert(message);
-            }else{
-                Alert.alert("알림", message);
-            }
-            return;
-        }
-
         const exportData = {
             version: "1.0",
             exportedAt: new Date().toISOString(),
             characters: characters,
-            persistentRecords: persistentRecords
+            bossRecords: bossRecords
         };
     
         // JSON 문자열로 변환
         const jsonData = JSON.stringify(exportData, null, 2);
-        const filename = `maple_stopwatch_data_${new Date().toISOString().split('T')[0]}.json`;
+        const filename = `maple_stopwatch_data_${formatDate(new Date())}.json`;
 
         // 플랫폼별 내보내기 분기 처리
         if(Platform.OS === 'web'){
@@ -88,17 +83,11 @@ export default function CharacterHistoryScreen(){
                 const parsedData = JSON.parse(text);
 
                 // 컨텍스트 병합 호출
-                const result = await importPersistentRecords(parsedData);
+                console.log("importMapleData : ", importMapleData);
+                const result = await importMapleData(parsedData);
 
                 if(result.success){
-                    alert(`성공적으로 데이터를 가져왔습니다!\n총 ${result.count}개의 기록이 병합/업데이트 되었습니다.`);
-
-                    // todo: 사용자 컨텍스트의 chracters 및 보스 기록 상태 동기화
-
-                    // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
-                    if(characters.length > 0 && !selectedCharacter){
-                        setSelectedCharacter(characters[0]);
-                    }
+                    alert(`성공적으로 데이터를 가져왔습니다!\n총 캐릭터: ${result.importedCharacterCount}개, 총 보스 기록: ${result.importedBossCount}개의 기록이 병합/업데이트 되었습니다.`);
                 }else{
                     alert(`가져오기 실패: ${result.error}`);
                 }
@@ -214,7 +203,7 @@ export default function CharacterHistoryScreen(){
                                 <List.Item
                                     title={`${item.bossName} (${item.difficulty})`}
                                     titleStyle={styles.bossTitle}
-                                    description={`⏱️ 클리어 시간: ${item.clearTime}  |  📅 날짜: ${item.clearDate}`}
+                                    description={`⏱️ 클리어 시간: ${formatTime(item.clearTimeSec)}  |  📅 날짜: ${item.clearDate}`}
                                     descriptionStyle={styles.bossDescription}
                                     right={(props)=>{
                                         return <IconButton

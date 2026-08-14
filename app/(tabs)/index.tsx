@@ -6,16 +6,17 @@ import { ClearDatePicker } from '@/components/ClearDatePicker';
 import { View } from '@/components/Themed';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useBoss } from '@/src/context/BossContext';
+import { useBossRecord } from '@/src/context/BossRecordContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
-import { BossRecord } from '@/src/types/boss';
+import { BossRecord, createBossRecord } from '@/src/models/BossRecord';
 import { formatDate, formatTime } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
-import uuid from 'react-native-uuid';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
+  const { characters, characterMap, selectedCharacter, setSelectedCharacter } = useCharacter();
+  const {tempRecords, setTempRecords, saveBossRecord} = useBossRecord();
     
   // 보스 및 난이도 상태 관리
   const {
@@ -52,20 +53,17 @@ export default function StopwatchScreen() {
     }
     const elapsedSeconds = complete();
 
-    const newRecord: BossRecord = {
-      id: uuid.v4(),
-      characterName: selectedCharacter.name,
+    const newRecord: BossRecord = createBossRecord({
+      characterId: selectedCharacter.id,
       bossName: selectedBossName,
       difficulty: selectedBossDifficulty,
-      clearTime: formatTime(elapsedSeconds),
       clearTimeSec: elapsedSeconds,
       clearDate: formatDate(manualDate),
-      createdAt: new Date()
-    };
+    });
 
-    setTempRecords((prevRecords)=>[newRecord, ...prevRecords]);
+    setTempRecords((prev)=>[newRecord, ...prev]);
 
-    await saveToPersistent(newRecord);
+    await saveBossRecord(newRecord);
   };
 
   // 수동 기록 저장 핸들러
@@ -104,19 +102,16 @@ export default function StopwatchScreen() {
     }
 
     const totalSeconds = mins * 60 + secs;
-    const newRecord: BossRecord = {
-      id: uuid.v4(),
-      characterName: selectedCharacter.name,
+    const newRecord: BossRecord = createBossRecord({
+      characterId: selectedCharacter.id,
       bossName: selectedBossName,
       difficulty: selectedBossDifficulty,
-      clearTime: formatTime(totalSeconds),
       clearTimeSec: totalSeconds,
       clearDate: formatDate(manualDate),
-      createdAt: new Date()
-    };
+    });
 
-    setTempRecords((prevRecords)=>[newRecord, ...prevRecords ]);
-    await saveToPersistent(newRecord);
+    setTempRecords((prev)=>[newRecord, ...prev]);
+    await saveBossRecord(newRecord);
 
     // 저장후 폼 초기화
     setManualMinutes('');
@@ -273,9 +268,9 @@ export default function StopwatchScreen() {
 
               {tempRecords.map((item)=>(
                 <DataTable.Row key={item.id}>
-                  <DataTable.Cell style={{flex: 1.2}}>{item.characterName}</DataTable.Cell>
+                  <DataTable.Cell style={{flex: 1.2}}>{characterMap.get(item.characterId)?.name}</DataTable.Cell>
                   <DataTable.Cell style={{flex: 2}}>{`${item.bossName} (${item.difficulty})`}</DataTable.Cell>
-                  <DataTable.Cell numeric style={{flex: 1.2}}>{item.clearTime}</DataTable.Cell>
+                  <DataTable.Cell numeric style={{flex: 1.2}}>{formatTime(item.clearTimeSec)}</DataTable.Cell>
                   <DataTable.Cell numeric style={{flex: 1.5}}>{item.clearDate}</DataTable.Cell>
                   <DataTable.Cell numeric style={styles.deleteCell}>
                     <IconButton

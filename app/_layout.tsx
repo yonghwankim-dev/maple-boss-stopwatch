@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { BossProvider } from '@/src/context/BossContext';
+import { BossRecordProvider } from '@/src/context/BossRecordContext';
 import { CharacterProvider } from '@/src/context/CharacterContext';
 
 export {
@@ -42,11 +43,13 @@ export default function RootLayout() {
   }
 
   return (
-    <BossProvider>
-      <CharacterProvider>
-        <RootLayoutNav />
-      </CharacterProvider>
-    </BossProvider>
+    <BossRecordProvider>
+      <BossProvider>
+        <CharacterProvider>
+          <RootLayoutNav />
+        </CharacterProvider>
+      </BossProvider>
+    </BossRecordProvider>
   );
 }
 

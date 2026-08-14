@@ -1,12 +1,14 @@
 import { View } from "@/components/Themed";
 import { useCharacter } from "@/src/context/CharacterContext";
+import { useDeleteCharacter } from "@/src/hooks/useDeleteCharacter";
 import React, { useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import { Button, Card, Divider, HelperText, IconButton, List, Provider, TextInput } from "react-native-paper";
 
 export default function ManageCharactersScreen(){
     // 전역 Context에서 캐릭터 목록 및 추가/삭제 메서드 공급받기
-    const {characters, addCharacter, deleteCharacter, updateChracter } = useCharacter();
+    const {characters, addCharacter, updateChracter } = useCharacter();
+    const {deleteCharacter} = useDeleteCharacter();
 
     // 입력 필드 로컬 상태 관리
     const [newCharacterName, setNewCharacterName] = useState<string>('');
@@ -131,7 +133,8 @@ export default function ManageCharactersScreen(){
                                         // 일반 모드: 캐릭터 이름 및 [편집], [삭제] 버튼 표시
                                         <>
                                             <List.Item
-                                                title={char.name}
+                                                title={`${index + 1}. ${char.name}`}
+                                                description={`id: ${char.id ? char.id.slice(-4) : ''}`}
                                                 titleStyle={styles.charTitle}
                                                 style={styles.listItem}
                                             />
