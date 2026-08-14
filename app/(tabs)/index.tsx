@@ -14,7 +14,7 @@ import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, characterMap, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveToPersistent } = useCharacter();
+  const { characters, characterMap, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveBossRecord } = useCharacter();
     
   // 보스 및 난이도 상태 관리
   const {
@@ -61,7 +61,7 @@ export default function StopwatchScreen() {
 
     setTempRecords((prev)=>[newRecord, ...prev]);
 
-    await saveToPersistent(newRecord);
+    await saveBossRecord(newRecord);
   };
 
   // 수동 기록 저장 핸들러
@@ -109,7 +109,7 @@ export default function StopwatchScreen() {
     });
 
     setTempRecords((prev)=>[newRecord, ...prev]);
-    await saveToPersistent(newRecord);
+    await saveBossRecord(newRecord);
 
     // 저장후 폼 초기화
     setManualMinutes('');
