@@ -203,6 +203,66 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         }
     }
 
+    const importCharacters = async (exportedData: ExportedData): Promise<number> => {
+        const map = new Map<string, Character>();
+
+        // 기존 캐릭터들을 Map 및 이름 체크용 Set에 세팅
+        const existingNames = new Set<string>();
+        characters.forEach((c)=>{
+            if(c.id){
+                map.set(c.id, c);
+                existingNames.add(c.name);
+            }
+        });
+
+        // 가져올 캐릭터 데이터를 순회하며 이름 중복 보정
+        const renamedExportedCharacters = exportedData.characters.map((char)=>{
+            if(!char.id){
+                return char;
+            }
+
+            // 이미 동일한 ID가 존재하면 기존 데이터의 이름을 변경하지 않고 그대로 유지하며 Map에 덮어쓴다.
+            if(map.has(char.id)){
+                return char;
+            }
+
+            // ID는 신규이지만 이름이 기존/이전 처리된 캐릭터 이름과 중복되는 경우
+            let uniqueName = char.name;
+            let counter = 1;
+
+            // 기존 이름 집합에 존재하지 않는 이름이 나올때까지 접미사 추가 (1), (2)... 증가
+            while(existingNames.has(uniqueName)){
+                uniqueName = `${char.name} (${counter})`;
+                counter++;
+            }
+
+            // 이름을 set에 추가하여 다음 순회 시에도 중복 방지함
+            existingNames.add(uniqueName);
+
+            // 이름이 변경(또는 유지)된 새 캐릭터 객체 반환
+            return {...char, name: uniqueName};
+        });
+
+        // 정제된 가져오기 캐릭터 데이터를 Map에 추가 (중복 ID는 덮어쓴다)
+        renamedExportedCharacters.forEach((c)=>{
+            if(c.id){
+                map.set(c.id, c);
+            }
+        });
+
+        // 병하된 결과를 배열로 변환
+        const totalCharacters = Array.from(map.values());
+        setCharacters(totalCharacters);
+
+        if(totalCharacters.length > 0){
+            setSelectedCharacter(totalCharacters[0]);
+        }        
+
+        // 캐릭터 정보들을 로컬 스토리지에 병합
+        await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(totalCharacters));
+        return renamedExportedCharacters.filter((c)=>!!c.id).length;
+    }
+
     const importBossRecords = async (exportedData: ExportedData): Promise<number> =>{
         // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
         const recordMap = new Map<string, BossRecord>();
@@ -230,31 +290,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         return importedCount;
     }
 
-    const importCharacters = async (exportedData: ExportedData): Promise<number> => {
-        // 캐릭터 배열 상태에 병합
-        const mergedCharacterMap = new Map<string, Character>();
-        // 기존 캐릭터 배열의 캐릭터들을 맵에 추가
-        characters.forEach(c=>{
-            if(c.id){
-                mergedCharacterMap.set(c.id, c);
-            }
-        })
-        exportedData.characters.forEach(c=>{
-            if(c.id){
-                mergedCharacterMap.set(c.id, c);
-            }
-        });
-        
-        // 병합된 캐릭터 맵을 배열로 변환하고 캐릭터 배열 상태 설정
-        const mergedCharacterArray = Array.from(mergedCharacterMap.values());
-        setCharacters(mergedCharacterArray);
-        // 캐릭터 선택을 제일 배열의 0번째 캐릭터로 선택
-        setSelectedCharacter(mergedCharacterArray[0]);
-        // 캐릭터 정보들을 로컬 스토리지에 병합
-        await AsyncStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(mergedCharacterArray));
-        return exportedData.characters.filter((c)=>!!c.id).length;
-    }
-
     // 보스 기록 가져오기
     const importPersistentRecords = async (exportedData: ExportedData): Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>=>{
         try{
@@ -275,8 +310,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 importedBossCount : 0,
                 error : "데이터 동기화 중 오류가 발생했습니다."
             };
-        }
-        
+        }   
     };
 
     return (
