@@ -17,7 +17,7 @@ interface CharacterContextType{
     setTempRecords: React.Dispatch<React.SetStateAction<BossRecord[]>>;
     
     /* 보스 클리어 기록 데이터 관리 기능 */
-    persistentRecords: BossRecord[]; // 통계 및 히스토리 전용 영속적 데이터
+    bossRecords: BossRecord[]; // 통계 및 히스토리 전용 영속적 데이터
     saveToPersistent: (record: BossRecord) => Promise<void>;
     deleteFromPersistent: (id: string) => Promise<void>;
 
@@ -39,7 +39,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
-    const [persistentRecords, setPersistentRecords] = useState<BossRecord[]>([]);
+    const [bossRecords, setPersistentRecords] = useState<BossRecord[]>([]);
     
     // 앱 구동시 로컬 저장소에서 영속 데이터 로드
     useEffect(()=>{
@@ -95,7 +95,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     // 영속 데이터 추가
     const saveToPersistent = async (record: BossRecord)=>{
         try{
-            const updated = [record, ...persistentRecords];
+            const updated = [record, ...bossRecords];
             setPersistentRecords(updated);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
         }catch(error){
@@ -106,7 +106,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     // 영속 데이터 삭제
     const deleteFromPersistent = async (id: string)=>{
         try{
-            const updated = persistentRecords.filter(r=>r.id !== id);
+            const updated = bossRecords.filter(r=>r.id !== id);
             setPersistentRecords(updated);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
         }catch(error){
@@ -149,7 +149,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         // 연관 보스 클리어 기록 삭제
         setTempRecords(prev=>prev.filter(record=>record.characterId !== id));
         // 히스토리/통계에 사용되는 영속성 데이터 내에서도 해당 캐릭터 기록 일괄 삭제
-        const filteredPersistentRecords = persistentRecords.filter(record=>record.characterId !== id);
+        const filteredPersistentRecords = bossRecords.filter(record=>record.characterId !== id);
         setPersistentRecords(filteredPersistentRecords);
         await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(filteredPersistentRecords));
 
@@ -237,7 +237,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         const map = new Map<string, BossRecord>();
 
         // 기존 보스 클리어 기록들 추가
-        persistentRecords.forEach(r=>{
+        bossRecords.forEach(r=>{
             if(r.id){
                 map.set(r.id, r);
             }
@@ -292,7 +292,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             setSelectedCharacter,
             tempRecords,
             setTempRecords,
-            persistentRecords,
+            bossRecords,
             addCharacter,
             deleteCharacter,
             updateChracter,

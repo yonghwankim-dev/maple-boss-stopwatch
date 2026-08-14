@@ -5,7 +5,7 @@ import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, selectedCharacter, setSelectedCharacter, persistentRecords, deleteFromPersistent, importMapleData} = useCharacter();
+    const {characters, selectedCharacter, setSelectedCharacter, bossRecords, deleteFromPersistent, importMapleData} = useCharacter();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
     // 숨겨진 HTML file input에 접근하기 위한 ref 선언
@@ -22,10 +22,10 @@ export default function CharacterHistoryScreen(){
         if(!selectedCharacter){
             return [];
         }
-        return persistentRecords
+        return bossRecords
             .filter((record)=>record.characterId === selectedCharacter.id)
             .sort((a,b)=>new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [persistentRecords, selectedCharacter]);
+    }, [bossRecords, selectedCharacter]);
 
     const handleDeleteRecord = async (id: string)=>{
         await deleteFromPersistent(id);
@@ -36,7 +36,7 @@ export default function CharacterHistoryScreen(){
             version: "1.0",
             exportedAt: new Date().toISOString(),
             characters: characters,
-            persistentRecords: persistentRecords
+            bossRecords: bossRecords
         };
     
         // JSON 문자열로 변환
