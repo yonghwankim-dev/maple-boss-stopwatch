@@ -39,7 +39,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(characters[0] || null);
     const [tempRecords, setTempRecords] = useState<BossRecord[]>([]);
-    const [bossRecords, setPersistentRecords] = useState<BossRecord[]>([]);
+    const [bossRecords, setBossRecords] = useState<BossRecord[]>([]);
     
     // 앱 구동시 로컬 저장소에서 영속 데이터 로드
     useEffect(()=>{
@@ -69,7 +69,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 // 2. 보스 클리어 기록 로드
                 const storedData = await AsyncStorage.getItem(RECORD_STORAGE_KEY);
                 if(storedData){
-                    setPersistentRecords(JSON.parse(storedData));
+                    setBossRecords(JSON.parse(storedData));
                 }
             }catch(error){
                 console.error("Failed to load records from AsyncStorage", error);
@@ -96,7 +96,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     const saveToPersistent = async (record: BossRecord)=>{
         try{
             const updated = [record, ...bossRecords];
-            setPersistentRecords(updated);
+            setBossRecords(updated);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
         }catch(error){
             console.error("Failed to save record persistently", error);
@@ -107,7 +107,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
     const deleteFromPersistent = async (id: string)=>{
         try{
             const updated = bossRecords.filter(r=>r.id !== id);
-            setPersistentRecords(updated);
+            setBossRecords(updated);
             await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(updated));
         }catch(error){
             console.error("Failed to delete persistent record", error);
@@ -150,7 +150,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         setTempRecords(prev=>prev.filter(record=>record.characterId !== id));
         // 히스토리/통계에 사용되는 영속성 데이터 내에서도 해당 캐릭터 기록 일괄 삭제
         const filteredPersistentRecords = bossRecords.filter(record=>record.characterId !== id);
-        setPersistentRecords(filteredPersistentRecords);
+        setBossRecords(filteredPersistentRecords);
         await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(filteredPersistentRecords));
 
         // 선택된 캐릭터 예외 처리
@@ -256,7 +256,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
         const records = Array.from(map.values())
                                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         // 상태 업데이트 및 스토리지 영속화
-        setPersistentRecords(records);
+        setBossRecords(records);
         await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(records));
         return importedCount;
     }

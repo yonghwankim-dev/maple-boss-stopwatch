@@ -3,7 +3,7 @@ import { getBossSortRank } from "@/constants/bossData";
 import { useBoss } from "@/src/context/BossContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
 import { Card, Divider, IconButton, List, Provider, Surface, Text } from "react-native-paper";
@@ -44,7 +44,7 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, selectedCharacter, persistentRecords} = useCharacter();
+    const {characters, selectedCharacter, setSelectedCharacter, bossRecords} = useCharacter();
 
     const {
         selectedBossName, 
@@ -57,26 +57,16 @@ export default function StatsScreen(){
         formatCurrentBossTarget
     } = useBoss();
     
-    // 통계를 볼 캐릭터 필터링 상태 정의 (기본값: 첫번째 캐릭터)
-    const [selectedCharName, setSelectedCharName] = useState<string>(characters[0]?.name || '');
-    
-    useEffect(()=>{
-        // 등록된 캐릭터가 로드되었을때 초기 선택 캐릭터명 동기화
-        if(characters.length > 0 && !selectedCharName){
-            setSelectedCharName(characters[0].name);
-        }
-    },[characters]);
-
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
-        const filtered = persistentRecords.filter(r => 
+        const filtered = bossRecords.filter(r => 
             r.characterId === selectedCharacter?.id &&
             r.bossName === selectedBossName &&
             r.difficulty === selectedBossDifficulty
         );
 
         // 일자별 가장 빠른 기록을 담을 임시 맵 객체 선언
-        const dailyBestMap: { [dateKey: string]: typeof persistentRecords[0] } = {};
+        const dailyBestMap: { [dateKey: string]: typeof bossRecords[0] } = {};
 
         filtered.forEach(record=>{
             // X축 레이블과 동일하게 일자 포맷을 추출하여 key로 사용 (예: "06-06")
@@ -95,12 +85,12 @@ export default function StatsScreen(){
         return Object.values(dailyBestMap)
             .sort((a,b)=> new Date(a.clearDate).getTime() - new Date(b.clearDate).getTime()) // 과거 -> 최근 순 (시간 기준 오름차순)
             .slice(-5); // 최근 5개만
-    }, [persistentRecords, selectedCharName, selectedBossName, selectedBossDifficulty]);
+    }, [bossRecords, selectedBossName, selectedBossDifficulty]);
 
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
-        const filtered = persistentRecords.filter(r => r.characterId === selectedCharacter?.id);
-        type RecordType = typeof persistentRecords[number];
+        const filtered = bossRecords.filter(r => r.characterId === selectedCharacter?.id);
+        type RecordType = typeof bossRecords[number];
         // key: 보스이름, value: 보스 기록 데이터 객체
         const bossMap: {[key: string]: RecordType} = {};
 
@@ -127,7 +117,7 @@ export default function StatsScreen(){
             // 2. 보스가 같다면 난이도 순서대로 정렬(예: Easy -> Normal -> Hard -> Extream)
             return rankA.difficultyIndex - rankB.difficultyIndex;
         });
-    }, [persistentRecords, selectedCharName]);
+    }, [bossRecords]);
 
     // 차트 데이터 및 Y축 5분 단위 계산 로직
     const chartConfigValues = useMemo(()=>{
@@ -174,11 +164,11 @@ export default function StatsScreen(){
                     <Card.Content>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                             {characters.map(char => {
-                                const isSelected = char.name === selectedCharName;
+                                const isSelected = char.id === selectedCharacter?.id;
                                 return (
                                     <Pressable
                                         key={char.id}
-                                        onPress={()=>setSelectedCharName(char.name)}
+                                        onPress={()=>setSelectedCharacter(char)}
                                         style={styles.pressableWrapper}
                                     >
                                         <Surface
@@ -208,7 +198,7 @@ export default function StatsScreen(){
                 
                 {/* 꺽은선 추이 그래프 세션 */}
                 <Card style={styles.card}>
-                    <Card.Title title={`${selectedCharName || '캐릭터'} - ${selectedBossName} (${selectedBossDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
+                    <Card.Title title={`${selectedCharacter?.name || '캐릭터'} - ${selectedBossName} (${selectedBossDifficulty}) 추이`} subtitle="일자별 레이드 시간 변화 추적 (Y축: 분, 5분간격)"/>
                     <Card.Content style={styles.chartCenter}>
                         {chartConfigValues ? (
                             <LineChart
