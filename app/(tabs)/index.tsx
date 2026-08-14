@@ -6,6 +6,7 @@ import { ClearDatePicker } from '@/components/ClearDatePicker';
 import { View } from '@/components/Themed';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
 import { useBoss } from '@/src/context/BossContext';
+import { useBossRecord } from '@/src/context/BossRecordContext';
 import { useCharacter } from '@/src/context/CharacterContext';
 import { useStopwatch } from '@/src/hooks/useStopwatch';
 import { BossRecord, createBossRecord } from '@/src/models/BossRecord';
@@ -14,7 +15,8 @@ import { useState } from 'react';
 
 export default function StopwatchScreen() {
   const {time, isRunning, start, pause, reset, complete } = useStopwatch();
-  const { characters, characterMap, selectedCharacter, setSelectedCharacter, tempRecords, setTempRecords, saveBossRecord } = useCharacter();
+  const { characters, characterMap, selectedCharacter, setSelectedCharacter } = useCharacter();
+  const {tempRecords, setTempRecords, saveBossRecord} = useBossRecord();
     
   // 보스 및 난이도 상태 관리
   const {

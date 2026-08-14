@@ -1,6 +1,7 @@
 import { BossSelectorCard } from "@/components/BossSelectorCard";
 import { getBossSortRank } from "@/constants/bossData";
 import { useBoss } from "@/src/context/BossContext";
+import { useBossRecord } from "@/src/context/BossRecordContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
 import React, { useMemo } from "react";
@@ -44,7 +45,8 @@ const formatXAxisLabel = (dateString: string)=>{
 }
 
 export default function StatsScreen(){
-    const {characters, selectedCharacter, setSelectedCharacter, bossRecords} = useCharacter();
+    const {characters, selectedCharacter, setSelectedCharacter} = useCharacter();
+    const {bossRecords} = useBossRecord();
 
     const {
         selectedBossName, 

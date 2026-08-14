@@ -1,11 +1,15 @@
+import { useBossRecord } from "@/src/context/BossRecordContext";
 import { useCharacter } from "@/src/context/CharacterContext";
+import { useImportMapleData } from "@/src/hooks/useImportMapleData";
 import { formatDate, formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, selectedCharacter, setSelectedCharacter, bossRecords, deleteBossRecord, importMapleData} = useCharacter();
+    const { characters, selectedCharacter, setSelectedCharacter } = useCharacter();
+    const { bossRecords, deleteBossRecord } = useBossRecord();
+    const { importMapleData } = useImportMapleData();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
     // 숨겨진 HTML file input에 접근하기 위한 ref 선언
@@ -79,6 +83,7 @@ export default function CharacterHistoryScreen(){
                 const parsedData = JSON.parse(text);
 
                 // 컨텍스트 병합 호출
+                console.log("importMapleData : ", importMapleData);
                 const result = await importMapleData(parsedData);
 
                 if(result.success){

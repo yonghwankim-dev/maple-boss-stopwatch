@@ -11,5 +11,5 @@ export interface ExportedData{
   version: string;
   exportedAt: string;
   characters: Character[];
-  persistentRecords: BossRecord[];
+  bossRecords: BossRecord[];
 }
