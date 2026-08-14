@@ -5,7 +5,7 @@ import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
-    const {characters, selectedCharacter, setSelectedCharacter, persistentRecords, deleteFromPersistent, importPersistentRecords} = useCharacter();
+    const {characters, selectedCharacter, setSelectedCharacter, persistentRecords, deleteFromPersistent, importMapleData} = useCharacter();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
     // 숨겨진 HTML file input에 접근하기 위한 ref 선언
@@ -78,15 +78,10 @@ export default function CharacterHistoryScreen(){
                 const parsedData = JSON.parse(text);
 
                 // 컨텍스트 병합 호출
-                const result = await importPersistentRecords(parsedData);
+                const result = await importMapleData(parsedData);
 
                 if(result.success){
                     alert(`성공적으로 데이터를 가져왔습니다!\n총 캐릭터: ${result.importedCharacterCount}개, 총 보스 기록: ${result.importedBossCount}개의 기록이 병합/업데이트 되었습니다.`);
-                    
-                    // 현재 조회중인 캐릭터의 데이터가 유입되었다면, 리스트가 즉시 갱신됨
-                    if(characters.length > 0 && !selectedCharacter){
-                        setSelectedCharacter(characters[0]);
-                    }
                 }else{
                     alert(`가져오기 실패: ${result.error}`);
                 }

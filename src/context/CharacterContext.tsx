@@ -27,7 +27,7 @@ interface CharacterContextType{
     updateChracter: (id: string, name: string, newName: string) => Promise<{success: boolean; error?: string}>;
 
     /* JSON 데이터 기반 캐릭터 및 보스 클리어 기록 가져오기 */
-    importPersistentRecords: (exportedData: ExportedData) => Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>;
+    importMapleData: (exportedData: ExportedData) => Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>;
 }
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
@@ -123,7 +123,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
                 error: "캐릭터 이름을 입력해주세요."
             };
         }
-        
+
         const newChar: Character = createCharacter(trimmedName);
 
         const updatedChars = [...characters, newChar];
@@ -234,33 +234,35 @@ export function CharacterProvider({ children }: { children: ReactNode }){
 
     const importBossRecords = async (exportedData: ExportedData): Promise<number> =>{
         // 기존 보스 클리어 기록들을 ID 기반의 Map 구조로 변환
-        const recordMap = new Map<string, BossRecord>();
+        const map = new Map<string, BossRecord>();
+
+        // 기존 보스 클리어 기록들 추가
         persistentRecords.forEach(r=>{
             if(r.id){
-                recordMap.set(r.id, r);
+                map.set(r.id, r);
             }
         });
 
         let importedCount = 0;
         // 가져온 데이터들을 순회하며 병합(중복 ID는 덮어쓰고, 새로운 ID는 추가)
         exportedData.persistentRecords.forEach(r=>{
-            if(r.id && r.bossName && r.characterId){
-                recordMap.set(r.id, r);
+            if(r.id){
+                map.set(r.id, r);
                 importedCount++;
             }
         });
 
         // Map을 다시 배열로 변환하고 최신 날짜 순(createdAt 내림차순)으로 정렬
-        const mergedRecords = Array.from(recordMap.values())
+        const records = Array.from(map.values())
                                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         // 상태 업데이트 및 스토리지 영속화
-        setPersistentRecords(mergedRecords);
-        await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(mergedRecords));
+        setPersistentRecords(records);
+        await AsyncStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(records));
         return importedCount;
     }
 
     // 보스 기록 가져오기
-    const importPersistentRecords = async (exportedData: ExportedData): Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>=>{
+    const importMapleData = async (exportedData: ExportedData): Promise<{success: boolean; importedCharacterCount: number, importedBossCount: number; error?: string}>=>{
         try{
             const importedCharacterCount = await importCharacters(exportedData);
             const importedBossCount = await importBossRecords(exportedData);
@@ -296,7 +298,7 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             updateChracter,
             saveToPersistent,
             deleteFromPersistent,
-            importPersistentRecords
+            importMapleData
         }}>
             {children}
         </CharacterContext.Provider>
