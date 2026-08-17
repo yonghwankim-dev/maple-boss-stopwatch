@@ -131,7 +131,6 @@ export default function StatsScreen(){
             .filter(r => r.characterId === selectedCharacter?.id)
             .filter(r => isLastWeekBossRecord(r.clearDate));
     
-        console.log(filtered);
         type RecordType = typeof bossRecords[number];
         // key: 보스이름, value: 보스 기록 데이터 객체
         const bossMap: {[key: string]: RecordType} = {};
