@@ -4,6 +4,7 @@ import { useBoss } from "@/src/context/BossContext";
 import { useBossRecord } from "@/src/context/BossRecordContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
+import { getThursdayWeekRange, isLastWeekBossRecord } from "@/src/utils/timeUtils";
 import React, { useMemo } from "react";
 import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
@@ -47,7 +48,6 @@ const formatXAxisLabel = (dateString: string)=>{
 export default function StatsScreen(){
     const {characters, selectedCharacter, setSelectedCharacter} = useCharacter();
     const {bossRecords} = useBossRecord();
-
     const {
         selectedBossName, 
         selectedBossDifficulty, 
@@ -58,6 +58,7 @@ export default function StatsScreen(){
         getCurrentSelectedBossDifficulties,
         formatCurrentBossTarget
     } = useBoss();
+    const {lastWeek} = getThursdayWeekRange();
     
     // 데이터 가공1: [특정 캐릭터 + 특정 보스 + 특정 난이도] 기준
     const filteredRecords = useMemo(()=>{
@@ -96,6 +97,46 @@ export default function StatsScreen(){
         // key: 보스이름, value: 보스 기록 데이터 객체
         const bossMap: {[key: string]: RecordType} = {};
 
+        filtered.forEach(r=>{
+            // 리스트 식별 명칭에 난이도를 함께 결합 (예: '스우 (Hard)')
+            const displayName = `${r.bossName} (${r.difficulty})`
+
+            if(!bossMap[displayName] || r.clearTimeSec < bossMap[displayName].clearTimeSec){
+                bossMap[displayName] = r;
+            }
+        });
+
+        return Object.entries(bossMap).map(([bossDisplayName, record]) => ({
+            bossDisplayName,
+            record
+        }))
+        .sort((a,b)=>{
+            const rankA = getBossSortRank(a.record.bossName, a.record.difficulty);
+            const rankB = getBossSortRank(b.record.bossName, b.record.difficulty);
+            // 1. 보스 순서가 다르면 보스 순서대로 정렬
+            if(rankA.bossIndex !== rankB.bossIndex){
+                return rankA.bossIndex - rankB.bossIndex;
+            }
+            // 2. 보스가 같다면 난이도 순서대로 정렬(예: Easy -> Normal -> Hard -> Extream)
+            return rankA.difficultyIndex - rankB.difficultyIndex;
+        });
+    }, [bossRecords]);
+
+    // 데이터 가공3: 지난주 보스 기록 계산
+    const lastWeekBossRecords = useMemo(()=>{
+        // 1. 보스 기록이 선택한 캐릭터의 것인지 필터링
+        // 2. 보스 기록의 클리어 일자가 range의 지난주 기록에 속하는지 필터링
+        
+        const filtered = bossRecords
+            .filter(r => r.characterId === selectedCharacter?.id)
+            .filter(r => isLastWeekBossRecord(r.clearDate));
+    
+        console.log(filtered);
+        type RecordType = typeof bossRecords[number];
+        // key: 보스이름, value: 보스 기록 데이터 객체
+        const bossMap: {[key: string]: RecordType} = {};
+
+        // 클리어 기록을 기반으로 
         filtered.forEach(r=>{
             // 리스트 식별 명칭에 난이도를 함께 결합 (예: '스우 (Hard)')
             const displayName = `${r.bossName} (${r.difficulty})`
@@ -284,6 +325,34 @@ export default function StatsScreen(){
                                         
                                     </View>
                                     {index < bestRecords.length - 1 && <Divider/>}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>기록이 존재하지 않습니다.</Text>                
+                        )}
+                    </Card.Content>
+                </Card>
+
+                {/* 보스별 지난주 기록 요약 보드 */}
+                <Card style={styles.card}>
+                    <Card.Title title={`보스별 지난주 기록(${lastWeek.start} ~ ${lastWeek.end})`} subtitle="가장 빠르게 클리어한 시간입니다."/>
+                    <Card.Content>
+                        {lastWeekBossRecords.length > 0 ? (
+                            lastWeekBossRecords.map((item, index) => (
+                                <React.Fragment key={item.bossDisplayName}>
+                                    <View style={styles.bestRow}>
+                                        <List.Item
+                                            title={item.bossDisplayName}
+                                            titleStyle={styles.bossTitle}
+                                            style={styles.listItem}
+                                        />
+                                        <View style={styles.recordContainer}>
+                                            <Text style={styles.bestTime}>{formatTime(item.record.clearTimeSec)}</Text>
+                                            <Text style={styles.bestCreatedAt}>{item.record.clearDate}</Text>
+                                        </View>
+                                        
+                                    </View>
+                                    {index < lastWeekBossRecords.length - 1 && <Divider/>}
                                 </React.Fragment>
                             ))
                         ) : (
