@@ -1,7 +1,8 @@
 import { Alert, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { Button, Card, DataTable, Divider, IconButton, Menu, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
+import { Button, Card, DataTable, Divider, IconButton, Provider, SegmentedButtons, TextInput } from 'react-native-paper';
 
 import { BossSelectorCard } from '@/components/BossSelectorCard';
+import { CharacterSelectorCard } from '@/components/CharacterSelectorCard';
 import { ClearDatePicker } from '@/components/ClearDatePicker';
 import { View } from '@/components/Themed';
 import StopwatchButtons from '@/src/components/StopwatchButtons';
@@ -127,37 +128,11 @@ export default function StopwatchScreen() {
     <Provider>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         {/* 캐릭터 필터 카드 */}
-        <Card style={styles.card}>
-          <Card.Title title="캐릭터 관리 및 선택" subtitle="스톱워치를 시작할 캐릭터를 선택해주세요"/>
-          <Card.Content>
-            {/* 메인 선택 구역 (캐릭터 / 보스 / 난이도) */}
-            <View style={styles.pickerRow}>
-              {/* 캐릭터 선택 메뉴 */}
-              <Menu
-                visible={charMenuVisible}
-                onDismiss={()=>setCharMenuVisible(false)}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={()=>setCharMenuVisible(true)}
-                    style={styles.singlePickerBtn}
-                    contentStyle={styles.pickerBtnContent}
-                  >
-                    캐릭터: {selectedCharacter?.name ? selectedCharacter?.name : '없음'}
-                  </Button>
-                } 
-              >
-                {characters.map((char)=>(
-                  <Menu.Item
-                    key={char.id}
-                    onPress={()=>{setSelectedCharacter(char); setCharMenuVisible(false);}}
-                    title={char.name}                    
-                  />
-                ))}
-              </Menu>
-            </View>
-          </Card.Content>
-        </Card>
+        <CharacterSelectorCard
+          characters={characters}
+          selectedCharacter={selectedCharacter}
+          setSelectedCharacter={setSelectedCharacter}
+        />
 
         {/* 보스 및 난이도 설정 카드 */}
         <BossSelectorCard
