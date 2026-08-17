@@ -1,6 +1,7 @@
 import { Character } from "@/src/types/types";
-import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { Card, Surface, Text } from "react-native-paper";
+import { View } from "./Themed";
 
 interface CharacterSelectorCardProps{
     characters: Character[];
@@ -23,8 +24,8 @@ export const CharacterSelectorCard: React.FC<CharacterSelectorCardProps> = ({
         <Card style={styles.card}>
             <Card.Title title={title} subtitle={subtitle}/>
             <Card.Content>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                    {characters.map(char => {
+                <View style={styles.chipGrid}>
+                    {characters.map((char)=>{
                         const isSelected = char.id === selectedCharacter?.id;
                         return (
                             <Pressable
@@ -42,7 +43,7 @@ export const CharacterSelectorCard: React.FC<CharacterSelectorCardProps> = ({
                             </Pressable>
                         );
                     })}
-                </ScrollView>
+                </View>
             </Card.Content>
         </Card>
         </>
@@ -53,6 +54,13 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     backgroundColor: "#fff"
+  },
+
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingVertical: 8
   },
   // 웹에서 마우스 커서를 올렸을때, 클릭 가능한 손가락 모양(pointer)이 나오도록 설정
   pressableWrapper: {
