@@ -1,4 +1,5 @@
 import { BossSelectorCard } from "@/components/BossSelectorCard";
+import { CharacterSelectorCard } from "@/components/CharacterSelectorCard";
 import { getBossSortRank } from "@/constants/bossData";
 import { useBoss } from "@/src/context/BossContext";
 import { useBossRecord } from "@/src/context/BossRecordContext";
@@ -6,9 +7,9 @@ import { useCharacter } from "@/src/context/CharacterContext";
 import { formatTime } from "@/src/utils/timeFormatter";
 import { getThursdayWeekRange, isLastWeekBossRecord } from "@/src/utils/timeUtils";
 import React, { useMemo } from "react";
-import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart } from 'react-native-chart-kit';
-import { Card, Divider, IconButton, List, Provider, Surface, Text } from "react-native-paper";
+import { Card, Divider, IconButton, List, Provider, Text } from "react-native-paper";
 import { G as SvgG, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 
 if(Platform.OS === 'web' && typeof window !== 'undefined'){
@@ -201,32 +202,13 @@ export default function StatsScreen(){
         <Provider>
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
                 {/* 캐릭터 퀵 셀렉터 (수평 스크롤 가로 바) */}
-                <Card style={styles.card}>
-                    <Card.Title title="캐릭터 선택" subtitle="통계를 확인할 캐릭터를 탭하세요."/>
-                    <Card.Content>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                            {characters.map(char => {
-                                const isSelected = char.id === selectedCharacter?.id;
-                                return (
-                                    <Pressable
-                                        key={char.id}
-                                        onPress={()=>setSelectedCharacter(char)}
-                                        style={styles.pressableWrapper}
-                                    >
-                                        <Surface
-                                            style={[styles.chip, isSelected && styles.chipActive]}
-                                        >
-                                            <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-                                                {char.name}
-                                            </Text>
-                                        </Surface>
-                                    </Pressable>
-                                );
-                            })}
-                        </ScrollView>
-                    </Card.Content>
-                </Card>
-
+                <CharacterSelectorCard
+                    characters={characters}
+                    selectedCharacter={selectedCharacter}
+                    setSelectedCharacter={setSelectedCharacter}
+                    subtitle="통계를 확인할 캐릭터를 탭하세요."
+                />
+                
                 {/* 보스 및 난이도 선택 필터 세션 */}
                 <BossSelectorCard
                     handleBossChange={handleBossChange}

@@ -1,14 +1,15 @@
+import { CharacterSelectorCard } from "@/components/CharacterSelectorCard";
 import { useBossRecord } from "@/src/context/BossRecordContext";
 import { useCharacter } from "@/src/context/CharacterContext";
 import { useImportMapleData } from "@/src/hooks/useImportMapleData";
 import { formatDate, formatTime } from "@/src/utils/timeFormatter";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Divider, IconButton, List, Menu, Provider, Text } from "react-native-paper";
+import { Button, Card, Divider, IconButton, List, Provider, Text } from "react-native-paper";
 
 export default function CharacterHistoryScreen(){
     const { characters, selectedCharacter, setSelectedCharacter } = useCharacter();
-    const { bossRecords, deleteBossRecord } = useBossRecord();
+    const { bossRecords, deleteBossRecords } = useBossRecord();
     const { importMapleData } = useImportMapleData();
     const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
 
@@ -32,8 +33,7 @@ export default function CharacterHistoryScreen(){
     }, [bossRecords, selectedCharacter]);
 
     const handleDeleteRecord = async (id: string)=>{
-        console.log("deleteBossRecord : ", deleteBossRecord);
-        deleteBossRecord(id);
+        await deleteBossRecords(id);
     };
 
     const handleExportJSON = async ()=>{
@@ -83,7 +83,6 @@ export default function CharacterHistoryScreen(){
                 const parsedData = JSON.parse(text);
 
                 // 컨텍스트 병합 호출
-                console.log("importMapleData : ", importMapleData);
                 const result = await importMapleData(parsedData);
 
                 if(result.success){
@@ -157,38 +156,14 @@ export default function CharacterHistoryScreen(){
                 </Card>
 
                 {/* 캐릭터 필터 선택 */}
-                <Card style={styles.card}>
-                    <Card.Title title="캐릭터별 기록 조회" subtitle="조회할 캐릭터를 선택하세요."/>
-                    <Card.Content>
-                        {/* 캐릭터 선택 메뉴 */}
-                        <Menu
-                            visible={charMenuVisible}
-                            onDismiss={()=>setCharMenuVisible(false)}
-                            anchor={
-                            <Button
-                                mode="outlined"
-                                onPress={()=>setCharMenuVisible(true)}
-                                style={styles.pickerBtn}
-                                contentStyle={styles.pickerBtnContent}
-                            >
-                                {selectedCharacter ? `${selectedCharacter.name}` : '캐릭터 선택하기'}
-                            </Button>
-                            } 
-                        >
-                            {characters.map((char)=>(
-                                <Menu.Item
-                                    key={char.id}
-                                    onPress={()=>{setSelectedCharacter(char); setCharMenuVisible(false);}}
-                                    title={char.name}                    
-                                />
-                            ))}
-                            {characters.length === 0 && (
-                                <Menu.Item title="등록된 캐릭터가 없습니다." disabled/>
-                            )}
-                        </Menu>
-                    </Card.Content>
-                </Card>
-
+                <CharacterSelectorCard
+                    characters={characters}
+                    selectedCharacter={selectedCharacter}
+                    setSelectedCharacter={setSelectedCharacter}
+                    title="캐릭터별 기록 조회"
+                    subtitle="조회할 캐릭터를 선택하세요."
+                />
+                
                 {/* 보스 클리어 리스트 출력 구역 */}
                 <Card style={styles.card}>
                     <Card.Title
