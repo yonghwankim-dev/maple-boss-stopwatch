@@ -123,14 +123,6 @@ export function CharacterProvider({ children }: { children: ReactNode }){
             };
         }
 
-        // 본인 이름이 아닌데 다른 캐릭터와 중복되는 경우 검사
-        if(characters.some(char => char.id !== id && char.name === trimmedName)){
-            return {
-                success: false,
-                error: "이미 등록된 캐릭터 이름입니다."
-            };
-        }
-
         // 캐릭터 목록 이름 업데이트
         const updatedChars = characters.map(char => char.id === id ? {...char, name: trimmedName} : char);
         setCharacters(updatedChars);

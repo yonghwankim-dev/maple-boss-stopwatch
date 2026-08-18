@@ -15,9 +15,9 @@ import { formatDate, formatTime } from '@/src/utils/timeFormatter';
 import { useState } from 'react';
 
 export default function StopwatchScreen() {
-  const {time, isRunning, start, pause, reset, complete } = useStopwatch();
+  const { time, isRunning, start, pause, reset, complete } = useStopwatch();
   const { characters, characterMap, selectedCharacter, setSelectedCharacter } = useCharacter();
-  const {tempRecords, setTempRecords, saveBossRecord} = useBossRecord();
+  const { tempRecords, setTempRecords, saveBossRecord } = useBossRecord();
     
   // 보스 및 난이도 상태 관리
   const {
@@ -31,16 +31,23 @@ export default function StopwatchScreen() {
       formatCurrentBossTarget
   } = useBoss();
 
-  // UI 메뉴 오픈 여부 제어 상태
-  const [charMenuVisible, setCharMenuVisible] = useState<boolean>(false);
-
   // 기록 방식 상태 관리 ('timer': 스톱워치, 'manual': 직접입력)
-  const [recordMode, setRecordMode] = useState<'timer' | 'manual'>('timer');
+  type RecordInputMode = 'TIMER' | 'MANUAL';
+  const [recordMode, setRecordMode] = useState<RecordInputMode>('TIMER');
 
-  // 직접 입력 폼 전용 상태 관리
+  // 입력모드 타입 : ELAPSED=소모시간, REMAINING=남은시간
+  type InputMode = 'ELAPSED' | 'REMAINING';
+
+  // 컴포넌트 내부 상태
+  const [inputMode, setInputMode] = useState<InputMode>('ELAPSED'); // 기본값: 소모시간 입력방식
+  
+  // 소모 시간 직접 입력 폼 전용 상태 관리  
   const [manualMinutes, setManualMinutes] = useState<string>('');
   const [manualSeconds, setManualSeconds] = useState<string>('');
   const [manualDate, setManualDate] = useState<Date>(new Date());
+
+  // 남은 시간 직접 입력 폼 전용 상태 관리
+  const limitSeconds = 1200;
 
   const handleComplete = async ()=>{
     if(!selectedCharacter){
@@ -52,7 +59,8 @@ export default function StopwatchScreen() {
       }
       return;
     }
-    const elapsedSeconds = complete();
+
+    let elapsedSeconds = complete();
 
     const newRecord: BossRecord = createBossRecord({
       characterId: selectedCharacter.id,
@@ -66,6 +74,8 @@ export default function StopwatchScreen() {
 
     await saveBossRecord(newRecord);
   };
+
+
 
   // 수동 기록 저장 핸들러
   const handleManualSave = async () => {
@@ -102,7 +112,13 @@ export default function StopwatchScreen() {
       return;
     }
 
-    const totalSeconds = mins * 60 + secs;
+    let totalSeconds = 0;
+    if(inputMode === 'ELAPSED'){
+      totalSeconds = mins * 60 + secs;
+    }else if(inputMode === 'REMAINING'){
+      totalSeconds = limitSeconds - ((mins * 60) + secs);
+    }
+
     const newRecord: BossRecord = createBossRecord({
       characterId: selectedCharacter.id,
       bossName: selectedBossName,
@@ -151,12 +167,12 @@ export default function StopwatchScreen() {
             onValueChange={setRecordMode}
             buttons={[
               {
-                value: 'timer',
+                value: 'TIMER',
                 label: '스톱워치 측정',
                 icon: 'timer-outline'
               },
               {
-                value: 'manual',
+                value: 'MANUAL',
                 label: '직접 기록 입력',
                 icon: 'pencil-outline'
               }
@@ -166,7 +182,7 @@ export default function StopwatchScreen() {
         </View>
 
         {/* 하단 제어 섹션 분기점 */}
-        {recordMode === 'timer' ? (
+        {recordMode === 'TIMER' ? (
           /* 타이머 디스플레이 및 제어 영역 */
           <Card style={styles.timeCard}>
             <Card.Content style={styles.timeContent}>    
@@ -186,8 +202,21 @@ export default function StopwatchScreen() {
         ) : (
           /* 수동 기록 입력 영역 */
           <Card style={styles.card}>
-            <Card.Title title="직접 기록 입력" subtitle="클리어 시간과 날짜를 수동으로 입력합니다."/>
+            <Card.Title title="직접 기록 입력" subtitle={
+              inputMode === 'ELAPSED'
+                ? '클리어에 소모된 시간을 입력합니다.'
+                : '남은 시간을 입력하면 소모 시간을 자동 계산합니다.'
+            }/>
             <Card.Content style={{gap: 16}}>
+              {/* 입력 방식 선택 스우치 */}
+              <SegmentedButtons
+                value={inputMode}
+                onValueChange={(val)=>setInputMode(val as InputMode)}
+                buttons={[
+                  {value: 'ELAPSED', label: '소모 시간 입력'},
+                  {value: 'REMAINING', label: '남은 시간 입력'}
+                ]}
+              />
               <View style={styles.inputRow}>
                 <TextInput
                   label="분"
