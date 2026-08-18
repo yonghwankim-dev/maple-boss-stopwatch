@@ -32,7 +32,8 @@ export default function StopwatchScreen() {
   } = useBoss();
 
   // 기록 방식 상태 관리 ('timer': 스톱워치, 'manual': 직접입력)
-  const [recordMode, setRecordMode] = useState<'timer' | 'manual'>('timer');
+  type RecordInputMode = 'TIMER' | 'MANUAL';
+  const [recordMode, setRecordMode] = useState<RecordInputMode>('TIMER');
 
   // 입력모드 타입 : ELAPSED=소모시간, REMAINING=남은시간
   type InputMode = 'ELAPSED' | 'REMAINING';
@@ -166,12 +167,12 @@ export default function StopwatchScreen() {
             onValueChange={setRecordMode}
             buttons={[
               {
-                value: 'timer',
+                value: 'TIMER',
                 label: '스톱워치 측정',
                 icon: 'timer-outline'
               },
               {
-                value: 'manual',
+                value: 'MANUAL',
                 label: '직접 기록 입력',
                 icon: 'pencil-outline'
               }
@@ -181,7 +182,7 @@ export default function StopwatchScreen() {
         </View>
 
         {/* 하단 제어 섹션 분기점 */}
-        {recordMode === 'timer' ? (
+        {recordMode === 'TIMER' ? (
           /* 타이머 디스플레이 및 제어 영역 */
           <Card style={styles.timeCard}>
             <Card.Content style={styles.timeContent}>    
