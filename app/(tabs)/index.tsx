@@ -75,8 +75,6 @@ export default function StopwatchScreen() {
     await saveBossRecord(newRecord);
   };
 
-
-
   // 수동 기록 저장 핸들러
   const handleManualSave = async () => {
     if(!selectedCharacter){

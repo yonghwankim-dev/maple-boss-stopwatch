@@ -19,6 +19,7 @@ export const getTodayDate = (): string => {
     return new Date().toISOString().split('T')[0];
 }
 
+// Date -> 'YYYY-MM-DD'
 export const formatDate = (date: Date): string =>{
     if(!(date instanceof Date) || isNaN(date.getTime())){
         return '';

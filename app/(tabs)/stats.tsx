@@ -94,8 +94,6 @@ export default function StatsScreen(){
     // 데이터 가공2: 보스별(난이도 포함 명칭) 개인 최고 기록 계산
     const bestRecords = useMemo(()=>{
         const filtered = bossRecords.filter(r => r.characterId === selectedCharacter?.id);
-        console.log("selectedCharacter : ", selectedCharacter);
-        console.log("filtered : ", filtered);
         type RecordType = typeof bossRecords[number];
         // key: 보스이름, value: 보스 기록 데이터 객체
         const bossMap: {[key: string]: RecordType} = {};
