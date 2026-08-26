@@ -12,12 +12,12 @@ export const BOSS_DATA: Record<string, string[]> = {
   "감시자 칼로스": ["Easy", "Normal", "Chaos", "Extreme"],
   "최초의 대적자": ["Easy", "Normal", "Hard", "Extreme"],
   "카링": ["Easy", "Normal", "Hard", "Extreme"],
+  "벨로나": ["Easy", "Normal", "Hard"],
   "찬란한 흉성": ["Normal", "Hard"],
   "림보": ["Normal", "Hard"],
   "발드릭스": ["Normal", "Hard"], 
   "유피테르": ["Normal", "Hard"],
-  "메이린": ["Normal", "Hard"],
-  "벨리나": ["Easy", "Normal", "Hard"]
+  "메이린": ["Normal", "Hard"]
 };
 
 export const BOSS_ORDER = Object.keys(BOSS_DATA);
